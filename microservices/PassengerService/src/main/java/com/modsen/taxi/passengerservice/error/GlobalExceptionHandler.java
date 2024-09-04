@@ -19,12 +19,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-/**
- * Глобальный обработчик исключений для всего приложения.
- * Перехватывает исключения и возвращает структурированные ответы с ошибками.
- */
+
 @RestControllerAdvice
-public class    GlobalExceptionHandler {
+public class GlobalExceptionHandler {
 
     private static final String DEFAULT_ERROR_MESSAGE = "No message available";
 
@@ -32,65 +29,34 @@ public class    GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public AppError handleResourceNotFound(ResourceNotFoundException e) {
-        return AppError.builder()
-                .status(HttpStatus.NOT_FOUND.value())
-                .message(e.getMessage())
-                .timestamp(LocalDateTime.now())
-                .build();
+        return AppError.builder().status(HttpStatus.NOT_FOUND.value()).message(e.getMessage()).timestamp(LocalDateTime.now()).build();
     }
-
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public AppErrorCustom handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
-        Map<String, String> errors = e.getBindingResult().getFieldErrors().stream()
-                .collect(Collectors.toMap(
-                        FieldError::getField,
-                        error -> Objects.requireNonNullElse(error.getDefaultMessage(), DEFAULT_ERROR_MESSAGE)
-                ));
-        return AppErrorCustom.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .message(e.getMessage())
-                .timestamp(LocalDateTime.now())
-                .errors(errors)
-                .build();
+        Map<String, String> errors = e.getBindingResult().getFieldErrors().stream().collect(Collectors.toMap(FieldError::getField, error -> Objects.requireNonNullElse(error.getDefaultMessage(), DEFAULT_ERROR_MESSAGE)));
+        return AppErrorCustom.builder().status(HttpStatus.BAD_REQUEST.value()).message(e.getMessage()).timestamp(LocalDateTime.now()).errors(errors).build();
     }
 
 
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public AppErrorCustom handleConstraintViolation(ConstraintViolationException e) {
-        Map<String, String> errors = e.getConstraintViolations().stream()
-                .collect(Collectors.toMap(
-                        violation -> violation.getPropertyPath().toString(),
-                        ConstraintViolation::getMessage
-                ));
-        return AppErrorCustom.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .message(e.getMessage())
-                .timestamp(LocalDateTime.now())
-                .errors(errors)
-                .build();
+        Map<String, String> errors = e.getConstraintViolations().stream().collect(Collectors.toMap(violation -> violation.getPropertyPath().toString(), ConstraintViolation::getMessage));
+        return AppErrorCustom.builder().status(HttpStatus.BAD_REQUEST.value()).message(e.getMessage()).timestamp(LocalDateTime.now()).errors(errors).build();
     }
 
     @ExceptionHandler(DuplicateResourceException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public AppError handleDuplicateResourceException(DuplicateResourceException e) {
-        return AppError.builder()
-                .status(HttpStatus.CONFLICT.value())
-                .message(e.getMessage())
-                .timestamp(LocalDateTime.now())
-                .build();
+        return AppError.builder().status(HttpStatus.CONFLICT.value()).message(e.getMessage()).timestamp(LocalDateTime.now()).build();
     }
 
 
     @ExceptionHandler(InvalidRequestException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public AppError handleInvalidRequestException(InvalidRequestException e) {
-        return AppError.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .message(e.getMessage())
-                .timestamp(LocalDateTime.now())
-                .build();
+        return AppError.builder().status(HttpStatus.BAD_REQUEST.value()).message(e.getMessage()).timestamp(LocalDateTime.now()).build();
     }
 }

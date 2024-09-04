@@ -9,6 +9,10 @@ import com.modsen.taxi.passengerservice.dto.PassengerResponse;
 import com.modsen.taxi.passengerservice.error.exception.DuplicateResourceException;
 import com.modsen.taxi.passengerservice.error.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,7 +23,7 @@ import java.util.stream.Collectors;
 public class PassengerServiceImpl implements PassengerService {
 
     private final PassengerRepository passengerRepository;
-    private final PassengerMapper passengerMapper = PassengerMapper.INSTANCE;
+    private final PassengerMapper passengerMapper;
 
     @Override
     public PassengerResponse createPassenger(PassengerRequest passengerRequest) {
@@ -51,13 +55,25 @@ public class PassengerServiceImpl implements PassengerService {
 
 
     @Override
-    public List<PassengerResponse> getAllPassengers() {
-        return passengerRepository.findAllByIsDeletedFalse()
-                .stream()
-                .map(passengerMapper::toPassengerResponse)
-                .collect(Collectors.toList());
-    }
+    public Page<PassengerResponse> getAllPassengers(Pageable pageable, String firstName, String lastName, String email) {
+        Passenger passengerProbe = Passenger.builder()
+                .firstName(firstName)
+                .lastName(lastName)
+                .email(email)
+                .isDeleted(false)
+                .build();
 
+        ExampleMatcher matcher = ExampleMatcher.matchingAll()
+                .withIgnoreNullValues()
+                .withMatcher("firstName", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase())
+                .withMatcher("lastName", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase())
+                .withMatcher("email", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase());
+
+        Example<Passenger> example = Example.of(passengerProbe, matcher);
+
+        Page<Passenger> passengers = passengerRepository.findAll(example, pageable);
+        return passengers.map(passengerMapper::toPassengerResponse);
+    }
     @Override
     public void deletePassenger(Long id) {
         Passenger passenger = passengerRepository.findByIdAndIsDeletedFalse(id)

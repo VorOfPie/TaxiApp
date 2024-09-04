@@ -5,11 +5,9 @@ import com.modsen.taxi.passengerservice.dto.PassengerRequest;
 import com.modsen.taxi.passengerservice.dto.PassengerResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
-import org.mapstruct.factory.Mappers;
 
-@Mapper
+@Mapper(componentModel="spring")
 public interface PassengerMapper {
-    PassengerMapper INSTANCE = Mappers.getMapper(PassengerMapper.class);
 
     Passenger toPassenger(PassengerRequest request);
 
