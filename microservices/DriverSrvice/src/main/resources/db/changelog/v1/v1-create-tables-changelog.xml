@@ -44,7 +44,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="car_id" type="BIGINT">
-                <constraints nullable="false"/>
+                <constraints nullable="false" foreignKeyName="fk_driver_car" references="cars(id)"/>
             </column>
             <column name="is_deleted" type="BOOLEAN" defaultValue="false">
                 <constraints nullable="false"/>
@@ -52,10 +52,4 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="3" author="Voropay Matvey">
-        <addForeignKeyConstraint baseColumnNames="car_id" baseTableName="drivers"
-                                 constraintName="FK_DRIVERS_ON_CAR" referencedColumnNames="id"
-                                 referencedTableName="cars"
-                                 onDelete="SET NULL"/>
-    </changeSet>
 </databaseChangeLog>

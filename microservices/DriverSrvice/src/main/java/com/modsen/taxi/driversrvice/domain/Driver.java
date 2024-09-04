@@ -24,10 +24,10 @@ public class Driver {
 
     private String gender;
 
-    @ManyToOne
-    @JoinColumn(name = "car_id")
+    @OneToOne
+    @JoinColumn(name = "car_id", nullable = false)
     private Car car;
 
     @Column(nullable = false)
-    private Boolean isDeleted = false;  // Soft delete flag
+    private Boolean isDeleted = false;
 }
