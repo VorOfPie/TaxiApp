@@ -1,14 +1,11 @@
-package dto;
+package com.modsen.taxi.passengerservice.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-public record PassengerDTO(
-        @NotNull(message = "ID cannot be null")
-        Long id,
+public record PassengerRequest(
 
         @NotBlank(message = "First name cannot be blank")
         @Size(max = 50, message = "First name must be less than 50 characters")

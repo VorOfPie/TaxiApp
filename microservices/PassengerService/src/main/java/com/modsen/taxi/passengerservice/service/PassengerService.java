@@ -1,20 +1,18 @@
 package com.modsen.taxi.passengerservice.service;
 
-
-import dto.PassengerDTO;
+import com.modsen.taxi.passengerservice.dto.PassengerRequest;
+import com.modsen.taxi.passengerservice.dto.PassengerResponse;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface PassengerService {
+    PassengerResponse createPassenger(PassengerRequest passengerRequest);
 
-    PassengerDTO createPassenger(PassengerDTO passengerDTO);
+    PassengerResponse updatePassenger(Long id, PassengerRequest passengerRequest);
 
-    Optional<PassengerDTO> updatePassenger(Long id, PassengerDTO passengerDTO);
+    PassengerResponse getPassengerById(Long id);
 
-    Optional<PassengerDTO> getPassengerById(Long id);
-
-    List<PassengerDTO> getAllPassengers();
+    List<PassengerResponse> getAllPassengers();
 
     void deletePassenger(Long id);
 }

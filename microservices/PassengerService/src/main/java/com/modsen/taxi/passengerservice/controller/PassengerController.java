@@ -1,7 +1,8 @@
 package com.modsen.taxi.passengerservice.controller;
 
 import com.modsen.taxi.passengerservice.service.PassengerService;
-import dto.PassengerDTO;
+import com.modsen.taxi.passengerservice.dto.PassengerRequest;
+import com.modsen.taxi.passengerservice.dto.PassengerResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -10,7 +11,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/passengers")
@@ -20,34 +20,30 @@ public class PassengerController {
 
     private final PassengerService passengerService;
 
-
     @PostMapping
-    public ResponseEntity<PassengerDTO> createPassenger(@Valid @RequestBody PassengerDTO passengerDTO) {
-        PassengerDTO createdPassenger = passengerService.createPassenger(passengerDTO);
+    public ResponseEntity<PassengerResponse> createPassenger(@Valid @RequestBody PassengerRequest passengerRequest) {
+        PassengerResponse createdPassenger = passengerService.createPassenger(passengerRequest);
         return new ResponseEntity<>(createdPassenger, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PassengerDTO> updatePassenger(
+    public ResponseEntity<PassengerResponse> updatePassenger(
             @PathVariable Long id,
-            @Valid @RequestBody PassengerDTO passengerDTO) {
-        Optional<PassengerDTO> updatedPassenger = passengerService.updatePassenger(id, passengerDTO);
-        return updatedPassenger
-                .map(passenger -> new ResponseEntity<>(passenger, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+            @Valid @RequestBody PassengerRequest passengerRequest) {
+        PassengerResponse updatedPassenger = passengerService.updatePassenger(id, passengerRequest);
+        return new ResponseEntity<>(updatedPassenger, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PassengerDTO> getPassengerById(@PathVariable Long id) {
-        Optional<PassengerDTO> passengerDTO = passengerService.getPassengerById(id);
-        return passengerDTO
-                .map(passenger -> new ResponseEntity<>(passenger, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    public ResponseEntity<PassengerResponse> getPassengerById(@PathVariable Long id) {
+        PassengerResponse passengerResponse = passengerService.getPassengerById(id);
+        return new ResponseEntity<>(passengerResponse, HttpStatus.OK);
     }
 
+
     @GetMapping
-    public ResponseEntity<List<PassengerDTO>> getAllPassengers() {
-        List<PassengerDTO> passengers = passengerService.getAllPassengers();
+    public ResponseEntity<List<PassengerResponse>> getAllPassengers() {
+        List<PassengerResponse> passengers = passengerService.getAllPassengers();
         return new ResponseEntity<>(passengers, HttpStatus.OK);
     }
 
