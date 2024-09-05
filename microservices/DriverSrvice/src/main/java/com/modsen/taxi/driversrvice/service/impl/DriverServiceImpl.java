@@ -3,10 +3,10 @@ package com.modsen.taxi.driversrvice.service.impl;
 import com.modsen.taxi.driversrvice.domain.Driver;
 import com.modsen.taxi.driversrvice.dto.request.DriverRequest;
 import com.modsen.taxi.driversrvice.dto.response.DriverResponse;
+import com.modsen.taxi.driversrvice.error.exception.ResourceNotFoundException;
 import com.modsen.taxi.driversrvice.mapper.DriverMapper;
 import com.modsen.taxi.driversrvice.repository.DriverRepository;
 import com.modsen.taxi.driversrvice.service.DriverService;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
@@ -23,7 +23,8 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public DriverResponse getDriverById(Long id) {
-        Driver driver = driverRepository.findByIdAndIsDeletedFalse(id).orElseThrow(() -> new EntityNotFoundException("Driver not found"));
+        Driver driver = driverRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + id));
         return driverMapper.toDriverResponse(driver);
     }
 
@@ -38,7 +39,8 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public DriverResponse updateDriver(Long id, DriverRequest driverRequest) {
-        Driver driver = driverRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Driver not found"));
+        Driver driver = driverRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + id));
         driverMapper.updateDriverFromRequest(driverRequest, driver);
         Driver updatedDriver = driverRepository.save(driver);
         return driverMapper.toDriverResponse(updatedDriver);
@@ -46,7 +48,8 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public void deleteDriver(Long id) {
-        Driver driver = driverRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Driver not found"));
+        Driver driver = driverRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + id));
         driver.setIsDeleted(true);
         driverRepository.save(driver);
     }
@@ -70,7 +73,10 @@ public class DriverServiceImpl implements DriverService {
 
         Page<Driver> drivers = driverRepository.findAll(example, pageable);
 
+        if (drivers.isEmpty()) {
+            throw new ResourceNotFoundException("No drivers found with the specified filters");
+        }
+
         return drivers.map(driverMapper::toDriverResponse);
     }
-
 }
