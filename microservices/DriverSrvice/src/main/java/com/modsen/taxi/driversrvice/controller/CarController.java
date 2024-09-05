@@ -34,24 +34,22 @@ public class CarController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id,asc") String[] sort
     ) {
-        try {
-            Pageable pageable = PageRequest.of(page, size, Sort.by(sort[0]).ascending());
-            if ("desc".equalsIgnoreCase(sort[1])) {
-                pageable = PageRequest.of(page, size, Sort.by(sort[0]).descending());
-            }
 
-            Page<CarResponse> pageCars = carService.getAllCars(pageable, brand, color, licensePlate, isActive);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("cars", pageCars.getContent());
-            response.put("currentPage", pageCars.getNumber());
-            response.put("totalItems", pageCars.getTotalElements());
-            response.put("totalPages", pageCars.getTotalPages());
-
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sort[0]).ascending());
+        if ("desc".equalsIgnoreCase(sort[1])) {
+            pageable = PageRequest.of(page, size, Sort.by(sort[0]).descending());
         }
+
+        Page<CarResponse> pageCars = carService.getAllCars(pageable, brand, color, licensePlate, isActive);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("cars", pageCars.getContent());
+        response.put("currentPage", pageCars.getNumber());
+        response.put("totalItems", pageCars.getTotalElements());
+        response.put("totalPages", pageCars.getTotalPages());
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+
     }
 
 
@@ -65,12 +63,9 @@ public class CarController {
 
     @PostMapping
     public ResponseEntity<CarResponse> createCar(@Validated @RequestBody CreateCarRequest createCarRequest) {
-        try {
-            CarResponse carResponse = carService.createCar(createCarRequest);
-            return new ResponseEntity<>(carResponse, HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        CarResponse carResponse = carService.createCar(createCarRequest);
+        return new ResponseEntity<>(carResponse, HttpStatus.CREATED);
+
     }
 
     @PutMapping("/{id}")

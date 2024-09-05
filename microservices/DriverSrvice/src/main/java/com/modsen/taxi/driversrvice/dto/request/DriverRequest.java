@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
+
 public record DriverRequest(
 
         @NotBlank(message = "First name is required")
@@ -21,6 +23,6 @@ public record DriverRequest(
 
         @NotBlank(message = "Gender is required")
         String gender,
-
-        CarRequest car
-) {}
+        List<CarRequest> cars
+) {
+}

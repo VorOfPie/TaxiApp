@@ -77,6 +77,7 @@ public class GlobalExceptionHandler {
                 .build();
     }
 
+
     @ExceptionHandler(InvalidStatusTransitionException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public AppError handleInvalidOrderStatusException(InvalidStatusTransitionException e) {

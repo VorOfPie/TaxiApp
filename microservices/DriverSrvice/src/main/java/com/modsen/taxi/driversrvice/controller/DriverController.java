@@ -3,15 +3,14 @@ package com.modsen.taxi.driversrvice.controller;
 import com.modsen.taxi.driversrvice.dto.request.DriverRequest;
 import com.modsen.taxi.driversrvice.dto.response.DriverResponse;
 import com.modsen.taxi.driversrvice.service.DriverService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import lombok.RequiredArgsConstructor;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,45 +30,24 @@ public class DriverController {
             @RequestParam(required = false) String phone,
             @RequestParam(required = false, defaultValue = "true") boolean isActive,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id,asc") String[] sort
+            @RequestParam(defaultValue = "10") int size
     ) {
-        try {
-            Pageable pageable = PageRequest.of(page, size, Sort.by(sort[0]).ascending());
-            if ("desc".equalsIgnoreCase(sort[1])) {
-                pageable = PageRequest.of(page, size, Sort.by(sort[0]).descending());
-            }
+        Pageable pageable = PageRequest.of(page, size);
+        Page<DriverResponse> drivers = driverService.getAllDrivers(pageable, firstName, lastName, phone, isActive);
 
-            Page<DriverResponse> pageDrivers = driverService.getAllDrivers(pageable, firstName, lastName, phone, isActive);
+        Map<String, Object> response = new HashMap<>();
+        response.put("drivers", drivers.getContent());
+        response.put("currentPage", drivers.getNumber());
+        response.put("totalItems", drivers.getTotalElements());
+        response.put("totalPages", drivers.getTotalPages());
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("drivers", pageDrivers.getContent());
-            response.put("currentPage", pageDrivers.getNumber());
-            response.put("totalItems", pageDrivers.getTotalElements());
-            response.put("totalPages", pageDrivers.getTotalPages());
-
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-
-    @GetMapping("/{id}")
-    public ResponseEntity<DriverResponse> getDriverById(@PathVariable Long id) {
-        DriverResponse driverResponse = driverService.getDriverById(id);
-        return new ResponseEntity<>(driverResponse, HttpStatus.OK);
-
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping
     public ResponseEntity<DriverResponse> createDriver(@Validated @RequestBody DriverRequest driverRequest) {
-        try {
-            DriverResponse driverResponse = driverService.createDriver(driverRequest);
-            return new ResponseEntity<>(driverResponse, HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        DriverResponse driverResponse = driverService.createDriver(driverRequest);
+        return new ResponseEntity<>(driverResponse, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
@@ -79,7 +57,6 @@ public class DriverController {
 
         DriverResponse updatedDriver = driverService.updateDriver(id, driverRequest);
         return new ResponseEntity<>(updatedDriver, HttpStatus.OK);
-
     }
 
     @DeleteMapping("/{id}")
@@ -88,4 +65,12 @@ public class DriverController {
         driverService.deleteDriver(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
+
+    @GetMapping("/{id}")
+    public ResponseEntity<DriverResponse> getDriverById(@PathVariable Long id) {
+        DriverResponse driverResponse = driverService.getDriverById(id);
+        return new ResponseEntity<>(driverResponse, HttpStatus.OK);
+    }
+
 }

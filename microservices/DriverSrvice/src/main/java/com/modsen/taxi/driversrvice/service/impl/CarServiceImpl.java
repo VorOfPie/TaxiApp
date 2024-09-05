@@ -3,12 +3,13 @@ package com.modsen.taxi.driversrvice.service.impl;
 import com.modsen.taxi.driversrvice.domain.Car;
 import com.modsen.taxi.driversrvice.dto.request.CreateCarRequest;
 import com.modsen.taxi.driversrvice.dto.response.CarResponse;
+import com.modsen.taxi.driversrvice.error.exception.DuplicateResourceException;
 import com.modsen.taxi.driversrvice.error.exception.ResourceNotFoundException;
 import com.modsen.taxi.driversrvice.mapper.CarMapper;
 import com.modsen.taxi.driversrvice.repository.CarRepository;
 import com.modsen.taxi.driversrvice.service.CarService;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
@@ -33,8 +34,13 @@ public class CarServiceImpl implements CarService {
     public CarResponse createCar(CreateCarRequest createCarRequest) {
         Car car = carMapper.toCar(createCarRequest);
         car.setIsDeleted(false);
-        Car savedCar = carRepository.save(car);
-        return carMapper.toCarResponse(savedCar);
+
+        try {
+            Car savedCar = carRepository.save(car);
+            return carMapper.toCarResponse(savedCar);
+        } catch (DataIntegrityViolationException e) {
+            throw new DuplicateResourceException("Car with license plate " + car.getLicensePlate() + " already exists.");
+        }
     }
 
     @Override
@@ -60,7 +66,7 @@ public class CarServiceImpl implements CarService {
                 .brand(brand)
                 .color(color)
                 .licensePlate(licensePlate)
-                .isDeleted(!isActive)  // Фильтрация по активности
+                .isDeleted(!isActive)
                 .build();
 
         ExampleMatcher matcher = ExampleMatcher.matchingAll()
@@ -72,10 +78,6 @@ public class CarServiceImpl implements CarService {
         Example<Car> example = Example.of(carProbe, matcher);
 
         Page<Car> cars = carRepository.findAll(example, pageable);
-
-        if (cars.isEmpty()) {
-            throw new ResourceNotFoundException("No cars found with the specified filters");
-        }
 
         return cars.map(carMapper::toCarResponse);
     }

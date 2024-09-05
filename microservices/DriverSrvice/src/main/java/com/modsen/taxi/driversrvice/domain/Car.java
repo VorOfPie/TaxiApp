@@ -22,5 +22,9 @@ public class Car {
 
     private String licensePlate;
 
-    private Boolean isDeleted = false;
+    private Boolean isDeleted;
+
+    @ManyToOne
+    @JoinColumn(name = "driver_id")
+    private Driver driver;
 }

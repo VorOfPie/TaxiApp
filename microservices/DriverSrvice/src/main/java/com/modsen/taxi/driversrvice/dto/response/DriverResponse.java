@@ -2,6 +2,8 @@ package com.modsen.taxi.driversrvice.dto.response;
 
 import lombok.Builder;
 
+import java.util.List;
+
 @Builder
 public record DriverResponse(
         Long id,
@@ -14,6 +16,6 @@ public record DriverResponse(
 
         String gender,
 
-        CarResponse car
+        List<CarResponse> cars
 ) {
 }

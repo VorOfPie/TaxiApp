@@ -3,6 +3,8 @@ package com.modsen.taxi.driversrvice.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -24,10 +26,8 @@ public class Driver {
 
     private String gender;
 
-    @OneToOne
-    @JoinColumn(name = "car_id", nullable = false)
-    private Car car;
+    private Boolean isDeleted;
 
-    @Column(nullable = false)
-    private Boolean isDeleted = false;
+    @OneToMany(mappedBy = "driver", fetch = FetchType.EAGER)
+    private List<Car> cars;
 }
