@@ -14,5 +14,5 @@ public interface CarService {
 
     void deleteCar(Long id);
 
-    Page<CarResponse> getAllCars(Pageable pageable, String brand, String color, String licensePlate);
+    Page<CarResponse> getAllCars(Pageable pageable, String brand, String color, String licensePlate,  boolean isActive);
 }

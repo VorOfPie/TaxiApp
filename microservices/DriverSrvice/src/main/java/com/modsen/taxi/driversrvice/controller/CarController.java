@@ -6,6 +6,7 @@ import com.modsen.taxi.driversrvice.service.CarService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -28,12 +29,18 @@ public class CarController {
             @RequestParam(required = false) String brand,
             @RequestParam(required = false) String color,
             @RequestParam(required = false) String licensePlate,
+            @RequestParam(required = false, defaultValue = "true") boolean isActive,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id,asc") String[] sort
     ) {
         try {
-            Pageable pageable = PageRequest.of(page, size);
-            Page<CarResponse> pageCars = carService.getAllCars(pageable, brand, color, licensePlate);
+            Pageable pageable = PageRequest.of(page, size, Sort.by(sort[0]).ascending());
+            if ("desc".equalsIgnoreCase(sort[1])) {
+                pageable = PageRequest.of(page, size, Sort.by(sort[0]).descending());
+            }
+
+            Page<CarResponse> pageCars = carService.getAllCars(pageable, brand, color, licensePlate, isActive);
 
             Map<String, Object> response = new HashMap<>();
             response.put("cars", pageCars.getContent());
@@ -46,6 +53,7 @@ public class CarController {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<CarResponse> getCarById(@PathVariable Long id) {

@@ -15,5 +15,5 @@ public interface DriverService {
 
     void deleteDriver(Long id);
 
-    Page<DriverResponse> getAllDrivers(Pageable pageable, String firstName, String lastName, String phone);
+    Page<DriverResponse> getAllDrivers(Pageable pageable, String firstName, String lastName, String phone,  boolean isActive);
 }

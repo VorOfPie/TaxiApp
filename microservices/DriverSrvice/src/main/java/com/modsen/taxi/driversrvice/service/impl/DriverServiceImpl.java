@@ -55,12 +55,12 @@ public class DriverServiceImpl implements DriverService {
     }
 
     @Override
-    public Page<DriverResponse> getAllDrivers(Pageable pageable, String firstName, String lastName, String phone) {
+    public Page<DriverResponse> getAllDrivers(Pageable pageable, String firstName, String lastName, String phone, boolean isActive) {
         Driver driverProbe = Driver.builder()
                 .firstName(firstName)
                 .lastName(lastName)
                 .phone(phone)
-                .isDeleted(false)
+                .isDeleted(!isActive)
                 .build();
 
         ExampleMatcher matcher = ExampleMatcher.matchingAll()
@@ -79,4 +79,5 @@ public class DriverServiceImpl implements DriverService {
 
         return drivers.map(driverMapper::toDriverResponse);
     }
+
 }

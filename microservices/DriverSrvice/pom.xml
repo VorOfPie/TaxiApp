@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.modsen.taxi</groupId>
-    <artifactId>DriverSrvice</artifactId>
+    <artifactId>DriverService</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>DriverService</name>
     <description>DriverService</description>

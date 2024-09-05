@@ -55,12 +55,12 @@ public class CarServiceImpl implements CarService {
     }
 
     @Override
-    public Page<CarResponse> getAllCars(Pageable pageable, String brand, String color, String licensePlate) {
+    public Page<CarResponse> getAllCars(Pageable pageable, String brand, String color, String licensePlate, boolean isActive) {
         Car carProbe = Car.builder()
                 .brand(brand)
                 .color(color)
                 .licensePlate(licensePlate)
-                .isDeleted(false)
+                .isDeleted(!isActive)  // Фильтрация по активности
                 .build();
 
         ExampleMatcher matcher = ExampleMatcher.matchingAll()
@@ -79,4 +79,5 @@ public class CarServiceImpl implements CarService {
 
         return cars.map(carMapper::toCarResponse);
     }
+
 }

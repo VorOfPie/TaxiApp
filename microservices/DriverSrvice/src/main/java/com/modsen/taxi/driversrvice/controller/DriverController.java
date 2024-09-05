@@ -6,6 +6,7 @@ import com.modsen.taxi.driversrvice.service.DriverService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -28,12 +29,18 @@ public class DriverController {
             @RequestParam(required = false) String firstName,
             @RequestParam(required = false) String lastName,
             @RequestParam(required = false) String phone,
+            @RequestParam(required = false, defaultValue = "true") boolean isActive,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id,asc") String[] sort
     ) {
         try {
-            Pageable pageable = PageRequest.of(page, size);
-            Page<DriverResponse> pageDrivers = driverService.getAllDrivers(pageable, firstName, lastName, phone);
+            Pageable pageable = PageRequest.of(page, size, Sort.by(sort[0]).ascending());
+            if ("desc".equalsIgnoreCase(sort[1])) {
+                pageable = PageRequest.of(page, size, Sort.by(sort[0]).descending());
+            }
+
+            Page<DriverResponse> pageDrivers = driverService.getAllDrivers(pageable, firstName, lastName, phone, isActive);
 
             Map<String, Object> response = new HashMap<>();
             response.put("drivers", pageDrivers.getContent());
@@ -46,6 +53,7 @@ public class DriverController {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<DriverResponse> getDriverById(@PathVariable Long id) {
