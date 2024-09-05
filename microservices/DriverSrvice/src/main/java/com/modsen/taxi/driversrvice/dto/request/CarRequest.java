@@ -1,9 +1,15 @@
 package com.modsen.taxi.driversrvice.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 public record CarRequest(
+        @NotNull(message = "Car ID is required")
+        @Positive(message ="Car Id must be positive")
+        Long id,
+
         @NotBlank(message = "Brand is required")
         @Size(min = 2, max = 50, message = "Brand must be between 2 and 50 characters")
         String brand,

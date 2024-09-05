@@ -22,14 +22,16 @@ public class DriverServiceImpl implements DriverService {
     private final DriverMapper driverMapper;
 
     @Override
-    public DriverResponse getDriver(Long id) {
-        Driver driver = driverRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Driver not found"));
+    public DriverResponse getDriverById(Long id) {
+        Driver driver = driverRepository.findByIdAndIsDeletedFalse(id).orElseThrow(() -> new EntityNotFoundException("Driver not found"));
         return driverMapper.toDriverResponse(driver);
     }
 
     @Override
     public DriverResponse createDriver(DriverRequest driverRequest) {
         Driver driver = driverMapper.toDriver(driverRequest);
+        driver.setIsDeleted(false);
+        driver.getCar().setIsDeleted(false);
         Driver savedDriver = driverRepository.save(driver);
         return driverMapper.toDriverResponse(savedDriver);
     }

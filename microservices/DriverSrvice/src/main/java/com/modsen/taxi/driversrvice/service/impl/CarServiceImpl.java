@@ -1,7 +1,7 @@
 package com.modsen.taxi.driversrvice.service.impl;
 
 import com.modsen.taxi.driversrvice.domain.Car;
-import com.modsen.taxi.driversrvice.dto.request.CarRequest;
+import com.modsen.taxi.driversrvice.dto.request.CreateCarRequest;
 import com.modsen.taxi.driversrvice.dto.response.CarResponse;
 import com.modsen.taxi.driversrvice.mapper.CarMapper;
 import com.modsen.taxi.driversrvice.repository.CarRepository;
@@ -22,22 +22,23 @@ public class CarServiceImpl implements CarService {
     private final CarMapper carMapper;
 
     @Override
-    public CarResponse getCar(Long id) {
-        Car car = carRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Car not found"));
+    public CarResponse getCarById(Long id) {
+        Car car = carRepository.findByIdAndIsDeletedFalse(id).orElseThrow(() -> new EntityNotFoundException("Car not found"));
         return carMapper.toCarResponse(car);
     }
 
     @Override
-    public CarResponse createCar(CarRequest carRequest) {
-        Car car = carMapper.toCar(carRequest);
+    public CarResponse createCar(CreateCarRequest createCarRequest) {
+        Car car = carMapper.toCar(createCarRequest);
+        car.setIsDeleted(false);
         Car savedCar = carRepository.save(car);
         return carMapper.toCarResponse(savedCar);
     }
 
     @Override
-    public CarResponse updateCar(Long id, CarRequest carRequest) {
+    public CarResponse updateCar(Long id, CreateCarRequest createCarRequest) {
         Car car = carRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Car not found"));
-        carMapper.updateCarFromRequest(carRequest, car);
+        carMapper.updateCarFromRequest(createCarRequest, car);
         Car updatedCar = carRepository.save(car);
         return carMapper.toCarResponse(updatedCar);
     }

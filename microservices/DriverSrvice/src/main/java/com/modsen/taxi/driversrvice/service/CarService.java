@@ -1,16 +1,16 @@
 package com.modsen.taxi.driversrvice.service;
 
-import com.modsen.taxi.driversrvice.dto.request.CarRequest;
+import com.modsen.taxi.driversrvice.dto.request.CreateCarRequest;
 import com.modsen.taxi.driversrvice.dto.response.CarResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface CarService {
-    CarResponse getCar(Long id);
+    CarResponse getCarById(Long id);
 
-    CarResponse createCar(CarRequest carRequest);
+    CarResponse createCar(CreateCarRequest createCarRequest);
 
-    CarResponse updateCar(Long id, CarRequest carRequest);
+    CarResponse updateCar(Long id, CreateCarRequest createCarRequest);
 
     void deleteCar(Long id);
 

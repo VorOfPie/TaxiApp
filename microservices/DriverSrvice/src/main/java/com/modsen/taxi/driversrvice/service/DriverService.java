@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface DriverService {
 
-    DriverResponse getDriver(Long id);
+    DriverResponse getDriverById(Long id);
 
     DriverResponse createDriver(DriverRequest driverRequest);
 
