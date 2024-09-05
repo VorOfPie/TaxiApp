@@ -2,9 +2,9 @@ package com.modsen.taxi.passengerservice.error;
 
 import com.modsen.taxi.passengerservice.dto.error.AppError;
 import com.modsen.taxi.passengerservice.dto.error.AppErrorCustom;
+import com.modsen.taxi.passengerservice.error.exception.DuplicateResourceException;
 import com.modsen.taxi.passengerservice.error.exception.InvalidRequestException;
 import com.modsen.taxi.passengerservice.error.exception.ResourceNotFoundException;
-import com.modsen.taxi.passengerservice.error.exception.DuplicateResourceException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;

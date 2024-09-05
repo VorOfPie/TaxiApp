@@ -1,20 +1,20 @@
 package com.modsen.taxi.passengerservice.controller;
 
-import com.modsen.taxi.passengerservice.service.PassengerService;
 import com.modsen.taxi.passengerservice.dto.PassengerRequest;
 import com.modsen.taxi.passengerservice.dto.PassengerResponse;
+import com.modsen.taxi.passengerservice.service.PassengerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -45,18 +45,24 @@ public class PassengerController {
         return new ResponseEntity<>(passengerResponse, HttpStatus.OK);
     }
 
-
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllPassengers(
             @RequestParam(required = false) String firstName,
             @RequestParam(required = false) String lastName,
             @RequestParam(required = false) String email,
+            @RequestParam(defaultValue = "true") boolean isActive,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id,asc") String sort
     ) {
         try {
-            Pageable paging = PageRequest.of(page, size);
-            Page<PassengerResponse> pagePassengers = passengerService.getAllPassengers(paging, firstName, lastName, email);
+            String[] sortParams = sort.split(",");
+            Sort sortOrder = Sort.by(sortParams[0]).ascending();
+            if ("desc".equalsIgnoreCase(sortParams[1])) {
+                sortOrder = Sort.by(sortParams[0]).descending();
+            }
+            Pageable pageable = PageRequest.of(page, size, sortOrder);
+            Page<PassengerResponse> pagePassengers = passengerService.getAllPassengers(pageable, firstName, lastName, email, isActive);
 
             Map<String, Object> response = new HashMap<>();
             response.put("passengers", pagePassengers.getContent());

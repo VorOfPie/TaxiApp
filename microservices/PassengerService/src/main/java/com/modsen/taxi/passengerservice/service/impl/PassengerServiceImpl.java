@@ -1,22 +1,19 @@
 package com.modsen.taxi.passengerservice.service.impl;
 
 import com.modsen.taxi.passengerservice.domain.Passenger;
-import com.modsen.taxi.passengerservice.mapper.PassengerMapper;
-import com.modsen.taxi.passengerservice.repository.PassengerRepository;
-import com.modsen.taxi.passengerservice.service.PassengerService;
 import com.modsen.taxi.passengerservice.dto.PassengerRequest;
 import com.modsen.taxi.passengerservice.dto.PassengerResponse;
 import com.modsen.taxi.passengerservice.error.exception.DuplicateResourceException;
 import com.modsen.taxi.passengerservice.error.exception.ResourceNotFoundException;
+import com.modsen.taxi.passengerservice.mapper.PassengerMapper;
+import com.modsen.taxi.passengerservice.repository.PassengerRepository;
+import com.modsen.taxi.passengerservice.service.PassengerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -55,12 +52,12 @@ public class PassengerServiceImpl implements PassengerService {
 
 
     @Override
-    public Page<PassengerResponse> getAllPassengers(Pageable pageable, String firstName, String lastName, String email) {
+    public Page<PassengerResponse> getAllPassengers(Pageable pageable, String firstName, String lastName, String email, boolean isActive) {
         Passenger passengerProbe = Passenger.builder()
                 .firstName(firstName)
                 .lastName(lastName)
                 .email(email)
-                .isDeleted(false)
+                .isDeleted(!isActive)
                 .build();
 
         ExampleMatcher matcher = ExampleMatcher.matchingAll()
@@ -72,8 +69,10 @@ public class PassengerServiceImpl implements PassengerService {
         Example<Passenger> example = Example.of(passengerProbe, matcher);
 
         Page<Passenger> passengers = passengerRepository.findAll(example, pageable);
+
         return passengers.map(passengerMapper::toPassengerResponse);
     }
+
     @Override
     public void deletePassenger(Long id) {
         Passenger passenger = passengerRepository.findByIdAndIsDeletedFalse(id)

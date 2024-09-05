@@ -24,4 +24,5 @@ public record PassengerRequest(
         @Pattern(regexp = "\\+?[0-9\\-\\s]+", message = "Phone number should be valid")
         @Size(max = 20, message = "Phone number must be less than 20 characters")
         String phone
-) {}
+) {
+}

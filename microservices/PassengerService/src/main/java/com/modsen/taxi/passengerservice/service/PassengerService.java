@@ -14,7 +14,7 @@ public interface PassengerService {
 
     PassengerResponse getPassengerById(Long id);
 
-    Page<PassengerResponse> getAllPassengers(Pageable pageable, String firstName, String lastName, String email);
+    Page<PassengerResponse> getAllPassengers(Pageable pageable, String firstName, String lastName, String email, boolean isActive);
 
     void deletePassenger(Long id);
 }

@@ -13,4 +13,5 @@ public record AppError(
 
         LocalDateTime timestamp
 
-) {}
+) {
+}
