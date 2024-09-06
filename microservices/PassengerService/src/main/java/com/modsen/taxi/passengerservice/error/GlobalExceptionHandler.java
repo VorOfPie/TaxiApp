@@ -39,7 +39,6 @@ public class GlobalExceptionHandler {
         return AppErrorCustom.builder().status(HttpStatus.BAD_REQUEST.value()).message(e.getMessage()).timestamp(LocalDateTime.now()).errors(errors).build();
     }
 
-
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public AppErrorCustom handleConstraintViolation(ConstraintViolationException e) {

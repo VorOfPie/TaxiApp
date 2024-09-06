@@ -12,6 +12,5 @@ public record AppError(
         String message,
 
         LocalDateTime timestamp
-
 ) {
 }

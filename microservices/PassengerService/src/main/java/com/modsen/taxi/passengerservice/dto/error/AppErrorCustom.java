@@ -15,6 +15,5 @@ public record AppErrorCustom(
         LocalDateTime timestamp,
 
         Map<String, String> errors
-
 ) {
 }

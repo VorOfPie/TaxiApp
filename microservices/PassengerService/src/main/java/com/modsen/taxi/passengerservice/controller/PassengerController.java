@@ -32,9 +32,7 @@ public class PassengerController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PassengerResponse> updatePassenger(
-            @PathVariable Long id,
-            @Valid @RequestBody PassengerRequest passengerRequest) {
+    public ResponseEntity<PassengerResponse> updatePassenger(@PathVariable Long id, @Valid @RequestBody PassengerRequest passengerRequest) {
         PassengerResponse updatedPassenger = passengerService.updatePassenger(id, passengerRequest);
         return new ResponseEntity<>(updatedPassenger, HttpStatus.OK);
     }
@@ -46,15 +44,7 @@ public class PassengerController {
     }
 
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getAllPassengers(
-            @RequestParam(required = false) String firstName,
-            @RequestParam(required = false) String lastName,
-            @RequestParam(required = false) String email,
-            @RequestParam(defaultValue = "true") boolean isActive,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id,asc") String sort
-    ) {
+    public ResponseEntity<Map<String, Object>> getAllPassengers(@RequestParam(required = false) String firstName, @RequestParam(required = false) String lastName, @RequestParam(required = false) String email, @RequestParam(defaultValue = "true") boolean isActive, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "id,asc") String sort) {
         try {
             String[] sortParams = sort.split(",");
             Sort sortOrder = Sort.by(sortParams[0]).ascending();
