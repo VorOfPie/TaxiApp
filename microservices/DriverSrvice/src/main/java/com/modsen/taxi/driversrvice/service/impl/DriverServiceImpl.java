@@ -10,6 +10,7 @@ import com.modsen.taxi.driversrvice.mapper.DriverMapper;
 import com.modsen.taxi.driversrvice.repository.CarRepository;
 import com.modsen.taxi.driversrvice.repository.DriverRepository;
 import com.modsen.taxi.driversrvice.service.DriverService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
@@ -27,7 +28,6 @@ public class DriverServiceImpl implements DriverService {
 
     private final DriverRepository driverRepository;
     private final DriverMapper driverMapper;
-
     private final CarRepository carRepository;
 
     @Override
@@ -37,7 +37,7 @@ public class DriverServiceImpl implements DriverService {
         return driverMapper.toDriverResponse(driver);
     }
 
-
+    @Transactional
     @Override
     public DriverResponse createDriver(DriverRequest driverRequest) {
         Driver driver = driverMapper.toDriver(driverRequest);
@@ -72,7 +72,7 @@ public class DriverServiceImpl implements DriverService {
         return driverMapper.toDriverResponse(finalSavedDriver);
     }
 
-
+    @Transactional
     @Override
     public DriverResponse updateDriver(Long id, DriverRequest driverRequest) {
         Driver driver = driverRepository.findById(id)

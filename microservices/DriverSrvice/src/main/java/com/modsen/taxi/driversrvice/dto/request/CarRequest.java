@@ -21,4 +21,5 @@ public record CarRequest(
         @NotBlank(message = "License plate is required")
         @Size(min = 5, max = 15, message = "License plate must be between 5 and 15 characters")
         String licensePlate
-) {}
+) {
+}

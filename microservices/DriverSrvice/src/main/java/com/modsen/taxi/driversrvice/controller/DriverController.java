@@ -24,14 +24,7 @@ public class DriverController {
     private final DriverService driverService;
 
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getAllDrivers(
-            @RequestParam(required = false) String firstName,
-            @RequestParam(required = false) String lastName,
-            @RequestParam(required = false) String phone,
-            @RequestParam(required = false, defaultValue = "true") boolean isActive,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
+    public ResponseEntity<Map<String, Object>> getAllDrivers(@RequestParam(required = false) String firstName, @RequestParam(required = false) String lastName, @RequestParam(required = false) String phone, @RequestParam(required = false, defaultValue = "true") boolean isActive, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<DriverResponse> drivers = driverService.getAllDrivers(pageable, firstName, lastName, phone, isActive);
 
@@ -51,17 +44,13 @@ public class DriverController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<DriverResponse> updateDriver(
-            @PathVariable Long id,
-            @Validated @RequestBody DriverRequest driverRequest) {
-
+    public ResponseEntity<DriverResponse> updateDriver(@PathVariable Long id, @Validated @RequestBody DriverRequest driverRequest) {
         DriverResponse updatedDriver = driverService.updateDriver(id, driverRequest);
         return new ResponseEntity<>(updatedDriver, HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<HttpStatus> deleteDriver(@PathVariable Long id) {
-
         driverService.deleteDriver(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }

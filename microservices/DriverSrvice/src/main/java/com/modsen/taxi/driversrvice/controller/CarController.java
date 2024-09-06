@@ -49,7 +49,6 @@ public class CarController {
         response.put("totalPages", pageCars.getTotalPages());
 
         return new ResponseEntity<>(response, HttpStatus.OK);
-
     }
 
 
@@ -58,14 +57,12 @@ public class CarController {
 
         CarResponse carResponse = carService.getCarById(id);
         return new ResponseEntity<>(carResponse, HttpStatus.OK);
-
     }
 
     @PostMapping
     public ResponseEntity<CarResponse> createCar(@Validated @RequestBody CreateCarRequest createCarRequest) {
         CarResponse carResponse = carService.createCar(createCarRequest);
         return new ResponseEntity<>(carResponse, HttpStatus.CREATED);
-
     }
 
     @PutMapping("/{id}")
@@ -75,7 +72,6 @@ public class CarController {
 
         CarResponse updatedCar = carService.updateCar(id, createCarRequest);
         return new ResponseEntity<>(updatedCar, HttpStatus.OK);
-
     }
 
     @DeleteMapping("/{id}")
@@ -83,6 +79,5 @@ public class CarController {
 
         carService.deleteCar(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-
     }
 }

@@ -8,6 +8,5 @@ public record CarResponse(
         String color,
 
         String licensePlate
-
 ) {
 }
