@@ -74,7 +74,7 @@ public class TripServiceImpl implements TripService {
 
     @Override
     @Transactional
-    public TripResponse changeTripStatus(Long id, String status) {
+    public TripResponse updateTripStatus(Long id, String status) {
         Trip existingTrip = tripRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Trip not found with id: " + id));
 

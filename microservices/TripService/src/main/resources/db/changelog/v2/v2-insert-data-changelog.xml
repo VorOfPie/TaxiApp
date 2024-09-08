@@ -35,7 +35,7 @@
             <column name="passenger_id" value="3"/>
             <column name="origin_address" value="555 Birch Ave"/>
             <column name="destination_address" value="777 Cedar St"/>
-            <column name="status" value="IN_PROGRESS"/>
+            <column name="status" value="EN_ROUTE_TO_PASSENGER"/>
             <column name="order_date_time" value="2024-09-05 08:30:00"/>
             <column name="price" value="30.00"/>
         </insert>
@@ -83,7 +83,7 @@
             <column name="passenger_id" value="3"/>
             <column name="origin_address" value="909 Spruce St"/>
             <column name="destination_address" value="303 Palm St"/>
-            <column name="status" value="IN_PROGRESS"/>
+            <column name="status" value="EN_ROUTE_TO_PASSENGER"/>
             <column name="order_date_time" value="2024-09-01 07:00:00"/>
             <column name="price" value="27.80"/>
         </insert>

@@ -14,7 +14,7 @@ public interface TripService {
 
     Page<TripResponse> getAllTrips(Pageable pageable, Long driverId, Long passengerId, String originAddress, String destinationAddress, String status);
 
-    TripResponse changeTripStatus(Long id, String status);
+    TripResponse updateTripStatus(Long id, String status);
 
     void deleteTrip(Long id);
 }
