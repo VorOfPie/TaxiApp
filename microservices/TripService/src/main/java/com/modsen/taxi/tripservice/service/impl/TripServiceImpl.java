@@ -4,6 +4,7 @@ import com.modsen.taxi.tripservice.domain.Trip;
 import com.modsen.taxi.tripservice.domain.TripStatus;
 import com.modsen.taxi.tripservice.dto.TripRequest;
 import com.modsen.taxi.tripservice.dto.TripResponse;
+import com.modsen.taxi.tripservice.error.exception.ResourceNotFoundException;
 import com.modsen.taxi.tripservice.mapper.TripMapper;
 import com.modsen.taxi.tripservice.repository.TripRepository;
 import com.modsen.taxi.tripservice.service.TripService;
@@ -35,7 +36,7 @@ public class TripServiceImpl implements TripService {
     @Transactional
     public TripResponse updateTrip(Long id, TripRequest tripRequest) {
         Trip existingTrip = tripRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Trip not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Trip not found with id: " + id));
 
         tripMapper.updateTripFromRequest(tripRequest, existingTrip);
         Trip updatedTrip = tripRepository.save(existingTrip);
@@ -45,7 +46,7 @@ public class TripServiceImpl implements TripService {
     @Override
     public TripResponse getTripById(Long id) {
         Trip trip = tripRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Trip not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Trip not found with id: " + id));
         return tripMapper.toDTO(trip);
     }
 
@@ -76,7 +77,7 @@ public class TripServiceImpl implements TripService {
     @Transactional
     public TripResponse updateTripStatus(Long id, String status) {
         Trip existingTrip = tripRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Trip not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Trip not found with id: " + id));
 
         existingTrip.setStatus(TripStatus.valueOf(status.toUpperCase()));
         Trip updatedTrip = tripRepository.save(existingTrip);
@@ -87,7 +88,7 @@ public class TripServiceImpl implements TripService {
     @Transactional
     public void deleteTrip(Long id) {
         Trip existingTrip = tripRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Trip not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Trip not found with id: " + id));
 
         tripRepository.delete(existingTrip);
     }
