@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="1" author="Voropay Matvey">
+        <insert tableName="rating">
+            <column name="driver_id" value="2"/>
+            <column name="passenger_id" value="2"/>
+            <column name="score" value="4.5"/>
+            <column name="comment" value="Great ride, but the car was a bit late."/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="2" author="Voropay Matvey">
+        <insert tableName="rating">
+            <column name="driver_id" value="2"/>
+            <column name="passenger_id" value="3"/>
+            <column name="score" value="5.0"/>
+            <column name="comment" value="Perfect ride, no issues at all!"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="3" author="Voropay Matvey">
+        <insert tableName="rating">
+            <column name="driver_id" value="3"/>
+            <column name="passenger_id" value="4"/>
+            <column name="score" value="3.7"/>
+            <column name="comment" value="The driver was polite, but the ride was a bit bumpy."/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="4" author="Voropay Matvey">
+        <insert tableName="rating">
+            <column name="driver_id" value="4"/>
+            <column name="passenger_id" value="2"/>
+            <column name="score" value="4.2"/>
+            <column name="comment" value="Good overall, but could have been faster."/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="5" author="Voropay Matvey">
+        <insert tableName="rating">
+            <column name="driver_id" value="2"/>
+            <column name="passenger_id" value="1"/>
+            <column name="score" value="2.8"/>
+            <column name="comment" value="Car was not clean, but the driver was friendly."/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>
