@@ -20,5 +20,4 @@ public class Rating {
     private Double score;
     private String comment;
 
-
 }

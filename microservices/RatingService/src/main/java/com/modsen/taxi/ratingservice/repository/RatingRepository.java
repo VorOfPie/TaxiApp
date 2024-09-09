@@ -9,4 +9,6 @@ import java.util.Optional;
 public interface RatingRepository extends JpaRepository<Rating, Long> {
     @Query("SELECT AVG(r.score) FROM Rating r WHERE r.driverId = :driverId")
     Optional<Double> calculateAverageRatingByDriverId(Long driverId);
+
+    boolean existsByDriverIdAndPassengerId(Long driverId, Long passengerId);
 }

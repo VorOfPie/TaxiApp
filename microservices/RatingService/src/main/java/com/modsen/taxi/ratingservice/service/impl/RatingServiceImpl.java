@@ -3,6 +3,9 @@ package com.modsen.taxi.ratingservice.service.impl;
 import com.modsen.taxi.ratingservice.domain.Rating;
 import com.modsen.taxi.ratingservice.dto.RatingRequest;
 import com.modsen.taxi.ratingservice.dto.RatingResponse;
+import com.modsen.taxi.ratingservice.error.exception.DuplicateResourceException;
+import com.modsen.taxi.ratingservice.error.exception.InvalidRequestException;
+import com.modsen.taxi.ratingservice.error.exception.ResourceNotFoundException;
 import com.modsen.taxi.ratingservice.mapper.RatingMapper;
 import com.modsen.taxi.ratingservice.repository.RatingRepository;
 import com.modsen.taxi.ratingservice.service.RatingService;
@@ -22,6 +25,10 @@ public class RatingServiceImpl implements RatingService {
 
     @Override
     public RatingResponse createRating(RatingRequest ratingRequest) {
+        boolean exists = ratingRepository.existsByDriverIdAndPassengerId(ratingRequest.driverId(), ratingRequest.passengerId());
+        if (exists) {
+            throw new DuplicateResourceException("Rating for this driver and passenger already exists.");
+        }
         Rating rating = ratingMapper.toRating(ratingRequest);
         Rating savedRating = ratingRepository.save(rating);
         return ratingMapper.toRatingResponse(savedRating);
@@ -30,17 +37,16 @@ public class RatingServiceImpl implements RatingService {
     @Override
     public RatingResponse updateRating(Long id, RatingRequest ratingRequest) {
         Rating rating = ratingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Rating with id " + id + " not found."));
-
+                .orElseThrow(() -> new ResourceNotFoundException("Rating with id " + id + " not found."));
         ratingMapper.updateRatingFromRequest(ratingRequest, rating);
-        Rating savedRating = ratingRepository.save(rating);
-        return ratingMapper.toRatingResponse(savedRating);
+        Rating updatedRating = ratingRepository.save(rating);
+        return ratingMapper.toRatingResponse(updatedRating);
     }
 
     @Override
     public RatingResponse getRatingById(Long id) {
         Rating rating = ratingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Rating with id " + id + " not found."));
+                .orElseThrow(() -> new ResourceNotFoundException("Rating with id " + id + " not found."));
         return ratingMapper.toRatingResponse(rating);
     }
 
@@ -51,26 +57,25 @@ public class RatingServiceImpl implements RatingService {
                 .passengerId(passengerId)
                 .build();
 
-        ExampleMatcher matcher = ExampleMatcher.matchingAll()
-                .withIgnoreNullValues();
+        Page<Rating> ratings = ratingRepository.findAll(Example.of(ratingProbe, ExampleMatcher.matching()
+                .withIgnoreNullValues()
+                .withMatcher("driverId", ExampleMatcher.GenericPropertyMatchers.exact())
+                .withMatcher("passengerId", ExampleMatcher.GenericPropertyMatchers.exact())), pageable);
 
-        Example<Rating> example = Example.of(ratingProbe, matcher);
-
-        Page<Rating> ratings = ratingRepository.findAll(example, pageable);
         return ratings.map(ratingMapper::toRatingResponse);
     }
 
 
     @Override
-    public void deleteRating(Long id) {
-        Rating rating = ratingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Rating with id " + id + " not found."));
-        ratingRepository.delete(rating);
+    public Double getAverageRatingForDriver(Long driverId) {
+        return ratingRepository.calculateAverageRatingByDriverId(driverId)
+                .orElseThrow(() -> new ResourceNotFoundException("No ratings found for driver with id " + driverId));
     }
 
     @Override
-    public Double getAverageRatingForDriver(Long driverId) {
-        return ratingRepository.calculateAverageRatingByDriverId(driverId)
-                .orElseThrow(() -> new RuntimeException("No ratings found for driver with id " + driverId));
+    public void deleteRating(Long id) {
+        Rating rating = ratingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Rating with id " + id + " not found."));
+        ratingRepository.delete(rating);
     }
 }
