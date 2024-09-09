@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="1" author="Voropay Matvey">
+        <insert tableName="trips">
+            <column name="driver_id" value="1"/>
+            <column name="passenger_id" value="2"/>
+            <column name="origin_address" value="123 Main St"/>
+            <column name="destination_address" value="456 Elm St"/>
+            <column name="status" value="CREATED"/>
+            <column name="order_date_time" value="2024-09-07 10:00:00"/>
+            <column name="price" value="25.50"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="2" author="Voropay Matvey">
+        <insert tableName="trips">
+            <column name="driver_id" value="2"/>
+            <column name="passenger_id" value="2"/>
+            <column name="origin_address" value="789 Oak St"/>
+            <column name="destination_address" value="101 Pine St"/>
+            <column name="status" value="COMPLETED"/>
+            <column name="order_date_time" value="2024-09-06 14:00:00"/>
+            <column name="price" value="40.75"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="3" author="Voropay Matvey">
+        <insert tableName="trips">
+            <column name="driver_id" value="3"/>
+            <column name="passenger_id" value="3"/>
+            <column name="origin_address" value="555 Birch Ave"/>
+            <column name="destination_address" value="777 Cedar St"/>
+            <column name="status" value="EN_ROUTE_TO_PASSENGER"/>
+            <column name="order_date_time" value="2024-09-05 08:30:00"/>
+            <column name="price" value="30.00"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="4" author="Voropay Matvey">
+        <insert tableName="trips">
+            <column name="driver_id" value="4"/>
+            <column name="passenger_id" value="4"/>
+            <column name="origin_address" value="321 Maple St"/>
+            <column name="destination_address" value="654 Walnut St"/>
+            <column name="status" value="CANCELLED"/>
+            <column name="order_date_time" value="2024-09-04 09:15:00"/>
+            <column name="price" value="15.20"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="5" author="Voropay Matvey">
+        <insert tableName="trips">
+            <column name="driver_id" value="2"/>
+            <column name="passenger_id" value="1"/>
+            <column name="origin_address" value="111 Cherry St"/>
+            <column name="destination_address" value="222 Peach St"/>
+            <column name="status" value="COMPLETED"/>
+            <column name="order_date_time" value="2024-09-03 11:45:00"/>
+            <column name="price" value="50.00"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="6" author="Voropay Matvey">
+        <insert tableName="trips">
+            <column name="driver_id" value="3"/>
+            <column name="passenger_id" value="1"/>
+            <column name="origin_address" value="444 Lemon St"/>
+            <column name="destination_address" value="888 Lime St"/>
+            <column name="status" value="CREATED"/>
+            <column name="order_date_time" value="2024-09-02 17:30:00"/>
+            <column name="price" value="35.10"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="7" author="Voropay Matvey">
+        <insert tableName="trips">
+            <column name="driver_id" value="2"/>
+            <column name="passenger_id" value="3"/>
+            <column name="origin_address" value="909 Spruce St"/>
+            <column name="destination_address" value="303 Palm St"/>
+            <column name="status" value="EN_ROUTE_TO_PASSENGER"/>
+            <column name="order_date_time" value="2024-09-01 07:00:00"/>
+            <column name="price" value="27.80"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="8" author="Voropay Matvey">
+        <insert tableName="trips">
+            <column name="driver_id" value="4"/>
+            <column name="passenger_id" value="1"/>
+            <column name="origin_address" value="505 Magnolia St"/>
+            <column name="destination_address" value="707 Redwood St"/>
+            <column name="status" value="COMPLETED"/>
+            <column name="order_date_time" value="2024-08-31 18:10:00"/>
+            <column name="price" value="45.60"/>
+        </insert>
+    </changeSet>
+    
+
+    <changeSet id="9" author="Voropay Matvey">
+        <insert tableName="trips">
+            <column name="driver_id" value="4"/>
+            <column name="passenger_id" value="4"/>
+            <column name="origin_address" value="616 Willow St"/>
+            <column name="destination_address" value="909 Fir St"/>
+            <column name="status" value="CREATED"/>
+            <column name="order_date_time" value="2024-08-30 12:00:00"/>
+            <column name="price" value="32.75"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>
