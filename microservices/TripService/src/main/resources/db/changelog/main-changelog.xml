@@ -17,6 +17,4 @@
     <changeSet id="2" author="Voropay Matvey">
         <tagDatabase tag="v2.0"/>
     </changeSet>
-
-
 </databaseChangeLog>

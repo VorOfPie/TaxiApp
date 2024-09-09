@@ -20,12 +20,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final String DEFAULT_ERROR_MESSAGE = "No message available";
-
 
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -52,7 +50,6 @@ public class GlobalExceptionHandler {
     public AppError handleDuplicateResourceException(DuplicateResourceException e) {
         return AppError.builder().status(HttpStatus.CONFLICT.value()).message(e.getMessage()).timestamp(LocalDateTime.now()).build();
     }
-
 
     @ExceptionHandler(InvalidRequestException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
