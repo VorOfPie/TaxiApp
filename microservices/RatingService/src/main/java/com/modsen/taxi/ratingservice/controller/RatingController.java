@@ -1,7 +1,7 @@
 package com.modsen.taxi.ratingservice.controller;
 
 import com.modsen.taxi.ratingservice.dto.RatingRequest;
-import com.modsen.taxi.ratingservice.dto.RatingResponse;
+import com.modsen.taxi.ratingservice.dto.response.RatingResponse;
 import com.modsen.taxi.ratingservice.service.RatingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

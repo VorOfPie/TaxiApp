@@ -1,7 +1,7 @@
 package com.modsen.taxi.tripservice.service;
 
 import com.modsen.taxi.tripservice.dto.TripRequest;
-import com.modsen.taxi.tripservice.dto.TripResponse;
+import com.modsen.taxi.tripservice.dto.response.TripResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

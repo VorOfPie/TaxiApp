@@ -10,6 +10,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/passenger_db
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_PROFILES_ACTIVE=docker
 
   driver:
     build: microservices/DriverService
@@ -21,6 +22,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/driver_db
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_PROFILES_ACTIVE=docker
 
   trip:
     build: microservices/TripService
@@ -32,6 +34,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/trip_db
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_PROFILES_ACTIVE=docker
 
 
   rating:
@@ -44,6 +47,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/rating_db
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_PROFILES_ACTIVE=docker
 
   postgres:
     container_name: postgres-sql-bsn

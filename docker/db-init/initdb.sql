@@ -1,4 +1,4 @@
-CREATE DATABASE  passenger_db;
+CREATE DATABASE passenger_db;
 CREATE DATABASE trip_db;
 CREATE DATABASE driver_db;
 CREATE DATABASE rating_db;

@@ -1,10 +1,8 @@
 spring:
-  config:
-    import: optional:file:.env[.properties]
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRESDB_LOCAL_PORT}/${POSTGRESDB_DATABASE}
-    username: ${POSTGRESDB_USER}
-    password: ${POSTGRESDB_ROOT_PASSWORD}
+    url: jdbc:postgresql://localhost:5432/rating_db
+    username: username
+    password: password
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -18,3 +16,18 @@ spring:
   liquibase:
     change-log: db/changelog/main-changelog.xml
     enabled: true
+server:
+  port: 7004
+
+ratingservice:
+  urls:
+    passenger: http://localhost:7001/api/v1/passengers/
+    driver: http://localhost:7002/api/v1/drivers/
+
+---
+spring.config.activate.on-profile: docker
+server.port: 8080
+ratingservice:
+  urls:
+    passenger: http://passenger:8080/api/v1/passengers/
+    driver: http://driver:8080/api/v1/drivers/
