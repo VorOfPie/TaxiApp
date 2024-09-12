@@ -2,7 +2,7 @@ spring:
   config:
     import: optional:file:.env[.properties]
   datasource:
-    url: jdbc:postgresql://localhost:${POSTGRESDB_LOCAL_PORT}/${POSTGRESDB_DATABASE}
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRESDB_LOCAL_PORT}/${POSTGRESDB_DATABASE}
     username: ${POSTGRESDB_USER}
     password: ${POSTGRESDB_ROOT_PASSWORD}
     driver-class-name: org.postgresql.Driver
