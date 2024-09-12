@@ -34,7 +34,6 @@ public class CarController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id,asc") String[] sort
     ) {
-
         Pageable pageable = PageRequest.of(page, size, Sort.by(sort[0]).ascending());
         if ("desc".equalsIgnoreCase(sort[1])) {
             pageable = PageRequest.of(page, size, Sort.by(sort[0]).descending());
@@ -54,7 +53,6 @@ public class CarController {
 
     @GetMapping("/{id}")
     public ResponseEntity<CarResponse> getCarById(@PathVariable Long id) {
-
         CarResponse carResponse = carService.getCarById(id);
         return new ResponseEntity<>(carResponse, HttpStatus.OK);
     }
@@ -69,14 +67,12 @@ public class CarController {
     public ResponseEntity<CarResponse> updateCar(
             @PathVariable Long id,
             @Validated @RequestBody CreateCarRequest createCarRequest) {
-
         CarResponse updatedCar = carService.updateCar(id, createCarRequest);
         return new ResponseEntity<>(updatedCar, HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<HttpStatus> deleteCar(@PathVariable Long id) {
-
         carService.deleteCar(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
