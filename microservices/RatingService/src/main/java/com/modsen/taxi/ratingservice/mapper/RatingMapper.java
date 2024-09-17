@@ -2,7 +2,7 @@ package com.modsen.taxi.ratingservice.mapper;
 
 import com.modsen.taxi.ratingservice.domain.Rating;
 import com.modsen.taxi.ratingservice.dto.RatingRequest;
-import com.modsen.taxi.ratingservice.dto.RatingResponse;
+import com.modsen.taxi.ratingservice.dto.response.RatingResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 

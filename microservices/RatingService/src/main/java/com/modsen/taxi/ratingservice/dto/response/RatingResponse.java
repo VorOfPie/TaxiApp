@@ -1,4 +1,4 @@
-package com.modsen.taxi.ratingservice.dto;
+package com.modsen.taxi.ratingservice.dto.response;
 
 public record RatingResponse(
         Long id,

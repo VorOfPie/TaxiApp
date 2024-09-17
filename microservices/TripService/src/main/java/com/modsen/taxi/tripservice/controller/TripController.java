@@ -1,7 +1,7 @@
 package com.modsen.taxi.tripservice.controller;
 
 import com.modsen.taxi.tripservice.dto.TripRequest;
-import com.modsen.taxi.tripservice.dto.TripResponse;
+import com.modsen.taxi.tripservice.dto.response.TripResponse;
 import com.modsen.taxi.tripservice.service.TripService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

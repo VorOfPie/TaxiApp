@@ -1,7 +1,7 @@
 package com.modsen.taxi.ratingservice.service;
 
 import com.modsen.taxi.ratingservice.dto.RatingRequest;
-import com.modsen.taxi.ratingservice.dto.RatingResponse;
+import com.modsen.taxi.ratingservice.dto.response.RatingResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

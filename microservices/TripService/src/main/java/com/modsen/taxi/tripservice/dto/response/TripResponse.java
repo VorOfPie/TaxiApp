@@ -1,4 +1,4 @@
-package com.modsen.taxi.tripservice.dto;
+package com.modsen.taxi.tripservice.dto.response;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
