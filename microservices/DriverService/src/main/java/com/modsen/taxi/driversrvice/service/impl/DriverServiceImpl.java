@@ -5,6 +5,7 @@ import com.modsen.taxi.driversrvice.domain.Driver;
 import com.modsen.taxi.driversrvice.dto.request.CarRequest;
 import com.modsen.taxi.driversrvice.dto.request.DriverRequest;
 import com.modsen.taxi.driversrvice.dto.response.DriverResponse;
+import com.modsen.taxi.driversrvice.error.exception.DuplicateResourceException;
 import com.modsen.taxi.driversrvice.error.exception.ResourceNotFoundException;
 import com.modsen.taxi.driversrvice.mapper.DriverMapper;
 import com.modsen.taxi.driversrvice.repository.CarRepository;
@@ -12,6 +13,7 @@ import com.modsen.taxi.driversrvice.repository.DriverRepository;
 import com.modsen.taxi.driversrvice.service.DriverService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
@@ -42,34 +44,39 @@ public class DriverServiceImpl implements DriverService {
     public DriverResponse createDriver(DriverRequest driverRequest) {
         Driver driver = driverMapper.toDriver(driverRequest);
         driver.setIsDeleted(false);
+        try{
+            Driver savedDriver = driverRepository.save(driver);
 
-        Driver savedDriver = driverRepository.save(driver);
+            List<Long> carIds = driverRequest.cars().stream()
+                    .map(CarRequest::id)
+                    .collect(Collectors.toList());
 
-        List<Long> carIds = driverRequest.cars().stream()
-                .map(CarRequest::id)
-                .collect(Collectors.toList());
+            List<Car> existingCars = carRepository.findAllById(carIds);
 
-        List<Car> existingCars = carRepository.findAllById(carIds);
+            existingCars.forEach(car -> car.setDriver(savedDriver));
 
-        existingCars.forEach(car -> car.setDriver(savedDriver));
+            List<Car> newCars = driverMapper.carRequestsToCars(driverRequest.cars()).stream()
+                    .filter(car -> car.getId() == null || !carIds.contains(car.getId()))
+                    .peek(car -> car.setDriver(savedDriver))
+                    .collect(Collectors.toList());
 
-        List<Car> newCars = driverMapper.carRequestsToCars(driverRequest.cars()).stream()
-                .filter(car -> car.getId() == null || !carIds.contains(car.getId()))
-                .peek(car -> car.setDriver(savedDriver))
-                .collect(Collectors.toList());
+            List<Car> savedNewCars = carRepository.saveAll(newCars);
 
-        List<Car> savedNewCars = carRepository.saveAll(newCars);
+            carRepository.saveAll(existingCars);
 
-        carRepository.saveAll(existingCars);
+            List<Car> allCars = Stream.concat(existingCars.stream(), savedNewCars.stream())
+                    .collect(Collectors.toList());
 
-        List<Car> allCars = Stream.concat(existingCars.stream(), savedNewCars.stream())
-                .collect(Collectors.toList());
+            savedDriver.setCars(allCars);
 
-        savedDriver.setCars(allCars);
+            Driver finalSavedDriver = driverRepository.save(savedDriver);
 
-        Driver finalSavedDriver = driverRepository.save(savedDriver);
+            return driverMapper.toDriverResponse(finalSavedDriver);
+        }catch (DataIntegrityViolationException e) {
+            throw new DuplicateResourceException("Driver with phone number " + driver.getPhone() + " already exists.");
+        }
 
-        return driverMapper.toDriverResponse(finalSavedDriver);
+
     }
 
     @Transactional

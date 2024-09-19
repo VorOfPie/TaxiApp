@@ -1,5 +1,7 @@
 package com.modsen.taxi.tripservice.service.impl;
 
+import com.modsen.taxi.tripservice.config.DriverClient;
+import com.modsen.taxi.tripservice.config.PassengerClient;
 import com.modsen.taxi.tripservice.domain.Trip;
 import com.modsen.taxi.tripservice.domain.TripStatus;
 import com.modsen.taxi.tripservice.dto.TripRequest;
@@ -31,20 +33,15 @@ public class TripServiceImpl implements TripService {
 
     private final TripRepository tripRepository;
     private final TripMapper tripMapper;
-    private final RestTemplate restTemplate;
-
-    @Value("${tripservice.urls.passenger}")
-    private String passengerServiceUrl;
-
-    @Value("${tripservice.urls.driver}")
-    private String driverServiceUrl;
+    private final PassengerClient passengerClient;
+    private final DriverClient driverClient;
 
 
     @Override
     @Transactional
     public TripResponse createTrip(TripRequest tripRequest) {
-        PassengerResponse passenger = getPassengerById(tripRequest.passengerId());
-        DriverResponse driver = getDriverById(tripRequest.driverId());
+        PassengerResponse passenger = passengerClient.getPassengerById(tripRequest.passengerId());
+        DriverResponse driver = driverClient.getDriverById(tripRequest.driverId());
         Trip trip = tripMapper.toEntity(tripRequest);
         trip.setStatus(TripStatus.CREATED);
         Trip savedTrip = tripRepository.save(trip);
@@ -52,16 +49,13 @@ public class TripServiceImpl implements TripService {
         return tripMapper.toDTO(savedTrip);
     }
 
-
-
     @Override
     @Transactional
     public TripResponse updateTrip(Long id, TripRequest tripRequest) {
-        PassengerResponse passenger = getPassengerById(tripRequest.passengerId());
-        DriverResponse driver = getDriverById(tripRequest.driverId());
+        PassengerResponse passenger = passengerClient.getPassengerById(tripRequest.passengerId());
+        DriverResponse driver = driverClient.getDriverById(tripRequest.driverId());
         Trip existingTrip = tripRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Trip not found with id: " + id));
-
         tripMapper.updateTripFromRequest(tripRequest, existingTrip);
         Trip updatedTrip = tripRepository.save(existingTrip);
         return tripMapper.toDTO(updatedTrip);
@@ -114,41 +108,5 @@ public class TripServiceImpl implements TripService {
                 .orElseThrow(() -> new ResourceNotFoundException("Trip not found with id: " + id));
 
         tripRepository.delete(existingTrip);
-    }
-
-    private PassengerResponse getPassengerById(Long passengerId) {
-        try {
-            ResponseEntity<PassengerResponse> response = restTemplate.exchange(
-                    passengerServiceUrl + passengerId,
-                    HttpMethod.GET,
-                    null,
-                    PassengerResponse.class
-            );
-            return response.getBody();
-        } catch (HttpClientErrorException e) {
-            if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
-                throw new ResourceNotFoundException("Passenger not found with id: " + passengerId);
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    private DriverResponse getDriverById(Long driverId) {
-        try {
-            ResponseEntity<DriverResponse> response = restTemplate.exchange(
-                    driverServiceUrl + driverId,
-                    HttpMethod.GET,
-                    null,
-                    DriverResponse.class
-            );
-            return response.getBody();
-        } catch (HttpClientErrorException e) {
-            if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
-                throw new ResourceNotFoundException("Driver not found with id: " + driverId);
-            } else {
-                throw e;
-            }
-        }
     }
 }
