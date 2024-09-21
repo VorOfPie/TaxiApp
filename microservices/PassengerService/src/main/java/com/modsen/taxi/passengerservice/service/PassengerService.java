@@ -4,17 +4,16 @@ import com.modsen.taxi.passengerservice.dto.PassengerRequest;
 import com.modsen.taxi.passengerservice.dto.PassengerResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
-import java.util.List;
+import reactor.core.publisher.Mono;
 
 public interface PassengerService {
-    PassengerResponse createPassenger(PassengerRequest passengerRequest);
+    Mono<PassengerResponse> createPassenger(PassengerRequest passengerRequest);
 
-    PassengerResponse updatePassenger(Long id, PassengerRequest passengerRequest);
+    Mono<PassengerResponse> updatePassenger(Long id, PassengerRequest passengerRequest);
 
-    PassengerResponse getPassengerById(Long id);
+    Mono<PassengerResponse> getPassengerById(Long id);
 
-    Page<PassengerResponse> getAllPassengers(Pageable pageable, String firstName, String lastName, String email, boolean isActive);
+    Mono<Page<PassengerResponse>> getAllPassengers(Pageable pageable, String firstName, String lastName, String email, boolean isActive);
 
-    void deletePassenger(Long id);
+    Mono<Void> deletePassenger(Long id);
 }
