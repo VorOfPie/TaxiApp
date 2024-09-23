@@ -4,28 +4,28 @@ import com.modsen.taxi.tripservice.config.DriverClient;
 import com.modsen.taxi.tripservice.config.PassengerClient;
 import com.modsen.taxi.tripservice.domain.Trip;
 import com.modsen.taxi.tripservice.domain.TripStatus;
-import com.modsen.taxi.tripservice.dto.TripRequest;
+import com.modsen.taxi.tripservice.dto.request.RatingRequest;
+import com.modsen.taxi.tripservice.dto.request.ScoreRequest;
+import com.modsen.taxi.tripservice.dto.request.TripRequest;
 import com.modsen.taxi.tripservice.dto.response.DriverResponse;
 import com.modsen.taxi.tripservice.dto.response.PassengerResponse;
 import com.modsen.taxi.tripservice.dto.response.TripResponse;
+import com.modsen.taxi.tripservice.error.exception.InvalidRequestException;
 import com.modsen.taxi.tripservice.error.exception.ResourceNotFoundException;
 import com.modsen.taxi.tripservice.mapper.TripMapper;
 import com.modsen.taxi.tripservice.repository.TripRepository;
 import com.modsen.taxi.tripservice.service.TripService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +36,7 @@ public class TripServiceImpl implements TripService {
     private final PassengerClient passengerClient;
     private final DriverClient driverClient;
 
+    private final KafkaTemplate<String, RatingRequest> kafkaTemplate;
 
     @Override
     @Transactional
@@ -109,4 +110,34 @@ public class TripServiceImpl implements TripService {
 
         tripRepository.delete(existingTrip);
     }
+
+    @Override
+    @Transactional
+    public void closeAndRateTrip(Long id, ScoreRequest scoreRequest) {
+        Trip trip = tripRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Trip not found with id: " + id));
+
+        try {
+            RatingRequest ratingRequest = RatingRequest.builder()
+                    .driverId(trip.getDriverId())
+                    .passengerId(trip.getPassengerId())
+                    .score(scoreRequest.score())
+                    .comment(scoreRequest.comment())
+                    .build();
+
+            trip.setStatus(TripStatus.COMPLETED);
+            tripRepository.save(trip);
+            Message<RatingRequest> message = MessageBuilder.
+                    withPayload(ratingRequest)
+                    .setHeader(KafkaHeaders.TOPIC, "rating-topic")
+                    .build();
+            kafkaTemplate.send(message);
+
+
+        } catch (Exception ex) {
+            throw new InvalidRequestException("Failed to send rating event via Kafka");
+        }
+    }
+
+
 }

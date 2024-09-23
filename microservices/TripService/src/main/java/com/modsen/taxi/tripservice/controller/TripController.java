@@ -1,6 +1,7 @@
 package com.modsen.taxi.tripservice.controller;
 
-import com.modsen.taxi.tripservice.dto.TripRequest;
+import com.modsen.taxi.tripservice.dto.request.ScoreRequest;
+import com.modsen.taxi.tripservice.dto.request.TripRequest;
 import com.modsen.taxi.tripservice.dto.response.TripResponse;
 import com.modsen.taxi.tripservice.service.TripService;
 import jakarta.validation.Valid;
@@ -79,5 +80,11 @@ public class TripController {
     public ResponseEntity<Void> deleteTrip(@PathVariable Long id) {
         tripService.deleteTrip(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @PostMapping("/{id}/close")
+    public ResponseEntity<Void> closeTrip(@PathVariable Long id, @RequestBody @Valid ScoreRequest scoreRequest){
+        tripService.closeAndRateTrip(id, scoreRequest);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

@@ -1,4 +1,4 @@
-package com.modsen.taxi.tripservice.dto;
+package com.modsen.taxi.tripservice.dto.request;
 
 import jakarta.validation.constraints.*;
 

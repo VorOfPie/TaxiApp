@@ -17,6 +17,18 @@ spring:
     change-log: db/changelog/main-changelog.xml
     enabled: true
 
+  kafka:
+    bootstrap-servers: localhost:29092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring:
+          json:
+            add.type.headers: false
+
+
+
 server.port: 7003
 
 tripservice:
@@ -25,7 +37,12 @@ tripservice:
     driver: http://localhost:7002/api/v1/drivers/
 
 ---
-spring.config.activate.on-profile: docker
+spring:
+  config:
+    activate:
+      on-profile: docker
+  kafka:
+    bootstrap-servers: kafka:9092
 server.port: 8080
 tripservice:
   urls:

@@ -16,6 +16,21 @@ spring:
   liquibase:
     change-log: db/changelog/main-changelog.xml
     enabled: true
+
+
+  kafka:
+    bootstrap-servers: localhost:29092
+    consumer:
+      group-id: rating-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: '*'
+        spring.json.value.default.type: com.modsen.taxi.ratingservice.dto.RatingRequest
+
+
+
+
 server:
   port: 7004
 
@@ -25,7 +40,12 @@ ratingservice:
     driver: http://localhost:7002/api/v1/drivers/
 
 ---
-spring.config.activate.on-profile: docker
+spring:
+  config:
+    activate:
+      on-profile: docker
+  kafka:
+    bootstrap-servers: kafka:9092
 server.port: 8080
 ratingservice:
   urls:

@@ -17,6 +17,7 @@ import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -40,6 +41,17 @@ public class RatingServiceImpl implements RatingService {
         Rating rating = ratingMapper.toRating(ratingRequest);
         Rating savedRating = ratingRepository.save(rating);
         return ratingMapper.toRatingResponse(savedRating);
+    }
+
+    @KafkaListener(topics = "rating-topic", groupId = "rating-group")
+    public void handleRatingEvent(RatingRequest ratingRequest) {
+        boolean exists = ratingRepository.existsByDriverIdAndPassengerId(ratingRequest.driverId(), ratingRequest.passengerId());
+        if (exists) {
+            throw new DuplicateResourceException("Rating for this driver and passenger already exists.");
+        }
+
+        Rating rating = ratingMapper.toRating(ratingRequest);
+        ratingRepository.save(rating);
     }
 
     @Override

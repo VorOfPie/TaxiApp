@@ -1,4 +1,4 @@
-package com.modsen.taxi.ratingservice.dto;
+package com.modsen.taxi.tripservice.dto.request;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -22,5 +22,4 @@ public record RatingRequest(
 
         @Size(max = 500, message = "Comment cannot exceed 500 characters")
         String comment
-) {
-}
+) {}
