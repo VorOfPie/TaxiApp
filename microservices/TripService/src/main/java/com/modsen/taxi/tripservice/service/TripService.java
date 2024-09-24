@@ -1,6 +1,7 @@
 package com.modsen.taxi.tripservice.service;
 
-import com.modsen.taxi.tripservice.dto.TripRequest;
+import com.modsen.taxi.tripservice.dto.request.ScoreRequest;
+import com.modsen.taxi.tripservice.dto.request.TripRequest;
 import com.modsen.taxi.tripservice.dto.response.TripResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,4 +18,6 @@ public interface TripService {
     TripResponse updateTripStatus(Long id, String status);
 
     void deleteTrip(Long id);
+
+    void closeAndRateTrip(Long id, ScoreRequest scoreRequest);
 }

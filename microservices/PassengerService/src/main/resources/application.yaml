@@ -19,6 +19,10 @@ spring:
 server:
   port: 7001
 
+passenger:
+  scheduler:
+    threadPoolSize: 10
+    taskQueueSize: 100
 ---
 spring.config.activate.on-profile: docker
 server.port: 8080

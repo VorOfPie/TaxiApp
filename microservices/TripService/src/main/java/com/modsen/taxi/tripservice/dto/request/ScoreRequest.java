@@ -1,19 +1,11 @@
-package com.modsen.taxi.ratingservice.dto;
+package com.modsen.taxi.tripservice.dto.request;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Builder;
 
-@Builder
-public record RatingRequest(
-
-        @NotNull(message = "Driver ID cannot be null")
-        Long driverId,
-
-        @NotNull(message = "Passenger ID cannot be null")
-        Long passengerId,
+public record ScoreRequest(
 
         @NotNull(message = "Rating cannot be null")
         @Min(value = 1, message = "Rating must be at least 1.0")
