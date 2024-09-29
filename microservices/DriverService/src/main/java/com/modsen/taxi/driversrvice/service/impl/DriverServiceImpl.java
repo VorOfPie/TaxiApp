@@ -18,6 +18,7 @@ import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 
@@ -46,38 +47,38 @@ public class DriverServiceImpl implements DriverService {
         return Mono.fromCallable(() -> {
             Driver driver = driverMapper.toDriver(driverRequest);
             driver.setIsDeleted(false);
-            try {
-                Driver savedDriver = driverRepository.save(driver);
-                List<Long> carIds = driverRequest.cars().stream()
-                        .map(CarRequest::id)
-                        .collect(Collectors.toList());
 
-                List<Car> existingCars = carRepository.findAllById(carIds);
-                existingCars.forEach(car -> car.setDriver(savedDriver));
-
-                List<Car> newCars = driverMapper.carRequestsToCars(driverRequest.cars()).stream()
-                        .filter(car -> car.getId() == null || !carIds.contains(car.getId()))
-                        .peek(car -> car.setDriver(savedDriver))
-                        .peek(car -> car.setIsDeleted(false))
-                        .collect(Collectors.toList());
-
-                List<Car> savedNewCars = carRepository.saveAll(newCars);
-                carRepository.saveAll(existingCars);
-
-                List<Car> allCars = Stream.concat(existingCars.stream(), savedNewCars.stream())
-                        .collect(Collectors.toList());
-
-                savedDriver.setCars(allCars);
-
-                Driver finalSavedDriver = driverRepository.save(savedDriver);
-
-                return driverMapper.toDriverResponse(finalSavedDriver);
-
-            } catch (DataIntegrityViolationException e) {
+            if (driverRepository.existsByPhone(driver.getPhone())) {
                 throw new DuplicateResourceException("Driver with phone number " + driver.getPhone() + " already exists.");
             }
+
+            Driver savedDriver = driverRepository.save(driver);
+
+            List<Long> carIds = driverRequest.cars().stream()
+                    .map(CarRequest::id)
+                    .collect(Collectors.toList());
+
+            List<Car> existingCars = carRepository.findAllById(carIds);
+            existingCars.forEach(car -> car.setDriver(savedDriver));
+
+            List<Car> newCars = driverMapper.carRequestsToCars(driverRequest.cars()).stream()
+                    .filter(car -> car.getId() == null || !carIds.contains(car.getId()))
+                    .peek(car -> car.setDriver(savedDriver))
+                    .peek(car -> car.setIsDeleted(false))
+                    .collect(Collectors.toList());
+
+            List<Car> savedNewCars = carRepository.saveAll(newCars);
+            carRepository.saveAll(existingCars);
+
+            List<Car> allCars = Stream.concat(existingCars.stream(), savedNewCars.stream())
+                    .collect(Collectors.toList());
+
+            savedDriver.setCars(allCars);
+
+            return driverMapper.toDriverResponse(savedDriver);
         }).subscribeOn(jdbcScheduler);
     }
+
 
     @Override
     public Mono<DriverResponse> updateDriver(Long id, DriverRequest driverRequest) {
