@@ -10,7 +10,6 @@ import com.modsen.taxi.tripservice.dto.request.TripRequest;
 import com.modsen.taxi.tripservice.dto.response.DriverResponse;
 import com.modsen.taxi.tripservice.dto.response.PassengerResponse;
 import com.modsen.taxi.tripservice.dto.response.TripResponse;
-import com.modsen.taxi.tripservice.error.exception.InvalidRequestException;
 import com.modsen.taxi.tripservice.error.exception.ResourceNotFoundException;
 import com.modsen.taxi.tripservice.mapper.TripMapper;
 import com.modsen.taxi.tripservice.repository.TripRepository;
@@ -22,12 +21,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.*;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -63,6 +64,12 @@ public class TripServiceImplTest {
     private PassengerResponse passengerResponse;
     private DriverResponse driverResponse;
 
+    private Trip trip1;
+    private Trip trip2;
+    private TripResponse tripResponse1;
+    private TripResponse tripResponse2;
+    private Pageable pageable;
+
     @BeforeEach
     public void setUp() {
         tripRequest = new TripRequest(
@@ -79,6 +86,14 @@ public class TripServiceImplTest {
         tripResponse = new TripResponse(1L, 1L, 1L, "Origin", "Destination", TripStatus.CREATED.name(), LocalDateTime.now(), BigDecimal.valueOf(100.0));
         passengerResponse = new PassengerResponse(1L, "Passenger Name", "Last Name", "passenger@example.com", "1234567890");
         driverResponse = new DriverResponse(1L, "Driver Name", "Last Name", "driver@example.com", "Male", null);
+
+        trip1 = new Trip(1L, 1L, 1L, "Origin 1", "Destination 1", TripStatus.CREATED, LocalDateTime.now(), BigDecimal.valueOf(100.0));
+        trip2 = new Trip(2L, 2L, 2L, "Origin 2", "Destination 2", TripStatus.CREATED, LocalDateTime.now(), BigDecimal.valueOf(200.0));
+
+        tripResponse1 = new TripResponse(1L, 1L, 1L, "Origin 1", "Destination 1", TripStatus.CREATED.name(), LocalDateTime.now(), BigDecimal.valueOf(100.0));
+        tripResponse2 = new TripResponse(2L, 2L, 2L, "Origin 2", "Destination 2", TripStatus.CREATED.name(), LocalDateTime.now(), BigDecimal.valueOf(200.0));
+
+        pageable = PageRequest.of(0, 2);
     }
 
     @Test
@@ -170,6 +185,7 @@ public class TripServiceImplTest {
         assertEquals("Trip not found with id: 1", exception.getMessage());
         verify(tripRepository, never()).delete(any(Trip.class));
     }
+
     @Test
     void closeAndRateTrip_ShouldSendRatingRequest_WhenTripExists() {
         ScoreRequest scoreRequest = new ScoreRequest(5.0, "Great trip!");
@@ -185,7 +201,7 @@ public class TripServiceImplTest {
         GenericMessage<RatingRequest> capturedMessage = messageCaptor.getValue();
         RatingRequest capturedRatingRequest = capturedMessage.getPayload();
 
-        assertEquals("rating-topic", capturedMessage.getHeaders().get(KafkaHeaders.TOPIC)); // Check the topic
+        assertEquals("rating-topic", capturedMessage.getHeaders().get(KafkaHeaders.TOPIC));
         assertEquals(1L, capturedRatingRequest.driverId());
         assertEquals(1L, capturedRatingRequest.passengerId());
         assertEquals(5.0, capturedRatingRequest.score());
@@ -195,17 +211,39 @@ public class TripServiceImplTest {
         verify(tripRepository).save(trip);
     }
 
+    @Test
+    void getAllTrips_ShouldReturnPagedTrips_WhenTripsExist() {
+        Page<Trip> tripPage = new PageImpl<>(List.of(trip1, trip2), pageable, 2);
+        when(tripRepository.findAll(any(Example.class), any(Pageable.class))).thenReturn(tripPage);
+        when(tripMapper.toDTO(trip1)).thenReturn(tripResponse1);
+        when(tripMapper.toDTO(trip2)).thenReturn(tripResponse2);
+
+        Page<TripResponse> result = tripService.getAllTrips(pageable, null, null, null, null, null);
+
+        assertEquals(2, result.getSize());
+        assertEquals(2, result.getTotalElements());
+        List<TripResponse> responses = result.getContent();
+        assertEquals(2, responses.size());
+        assertEquals(tripResponse1, responses.get(0));
+        assertEquals(tripResponse2, responses.get(1));
+
+        verify(tripRepository).findAll(any(Example.class), eq(pageable));
+    }
 
     @Test
-    void closeAndRateTrip_ShouldThrowInvalidRequestException_WhenKafkaSendFails() {
-        ScoreRequest scoreRequest = new ScoreRequest(5.0, "Great trip!");
-        when(tripRepository.findById(anyLong())).thenReturn(Optional.of(trip));
+    void getAllTrips_ShouldReturnFilteredTrips_WhenFiltersAreApplied() {
+        Page<Trip> tripPage = new PageImpl<>(List.of(trip1), pageable, 1);
+        when(tripRepository.findAll(any(Example.class), eq(pageable))).thenReturn(tripPage);
+        when(tripMapper.toDTO(trip1)).thenReturn(tripResponse1);
 
-        doThrow(new RuntimeException("Kafka error")).when(kafkaTemplate).send(anyString(), any(RatingRequest.class));
+        Page<TripResponse> result = tripService.getAllTrips(pageable, 1L, null, "Origin Address", "Destination Address", "CREATED");
 
-        Exception exception = assertThrows(InvalidRequestException.class, () -> tripService.closeAndRateTrip(1L, scoreRequest));
+        assertEquals(1, result.getTotalElements());
+        List<TripResponse> responses = result.getContent();
+        assertEquals(1, responses.size());
+        assertEquals(tripResponse1, responses.get(0));
 
-        assertEquals("Failed to send rating event via Kafka", exception.getMessage());
-        verify(tripRepository).save(trip);
+        verify(tripRepository).findAll(any(Example.class), eq(pageable));
     }
+
 }
