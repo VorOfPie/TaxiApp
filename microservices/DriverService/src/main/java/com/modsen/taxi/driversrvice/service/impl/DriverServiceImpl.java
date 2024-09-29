@@ -41,13 +41,11 @@ public class DriverServiceImpl implements DriverService {
                 .subscribeOn(jdbcScheduler)
                 .map(driverMapper::toDriverResponse);
     }
-
     @Override
     public Mono<DriverResponse> createDriver(DriverRequest driverRequest) {
         return Mono.fromCallable(() -> {
             Driver driver = driverMapper.toDriver(driverRequest);
             driver.setIsDeleted(false);
-
             try {
                 Driver savedDriver = driverRepository.save(driver);
                 List<Long> carIds = driverRequest.cars().stream()
@@ -80,7 +78,6 @@ public class DriverServiceImpl implements DriverService {
             }
         }).subscribeOn(jdbcScheduler);
     }
-
 
     @Override
     public Mono<DriverResponse> updateDriver(Long id, DriverRequest driverRequest) {
