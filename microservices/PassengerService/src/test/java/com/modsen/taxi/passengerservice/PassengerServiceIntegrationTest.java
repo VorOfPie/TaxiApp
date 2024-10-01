@@ -68,6 +68,7 @@ public class PassengerServiceIntegrationTest {
         assertThat(createdPassenger.email()).isEqualTo("john.doe@example.com");
         assertThat(createdPassenger.phone()).isEqualTo("+1234567890");
     }
+
     @Test
     void createPassenger_ShouldReturnConflict_WhenDuplicateEmailIsProvided() {
         PassengerRequest passengerRequest = new PassengerRequest("John", "Doe", "john.doe@example.com", "+1234567890");
@@ -115,6 +116,43 @@ public class PassengerServiceIntegrationTest {
     }
 
     @Test
+    void updatePassenger_ShouldReturnUpdatedPassengerResponse_WhenPassengerExists() {
+        PassengerRequest passengerRequest = new PassengerRequest("John", "Doe", "john.doe@example.com", "+1234567890");
+        PassengerResponse createdPassenger = postPassenger(passengerRequest);
+
+        PassengerRequest updatedPassengerRequest = new PassengerRequest("Johnathan", "Doe", "john.doe@example.com", "+0987654321");
+
+        PassengerResponse updatedPassenger = client.put()
+                .uri("/api/v1/passengers/{id}", createdPassenger.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(updatedPassengerRequest)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(PassengerResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(updatedPassenger).isNotNull();
+        assertThat(updatedPassenger.firstName()).isEqualTo("Johnathan");
+        assertThat(updatedPassenger.lastName()).isEqualTo("Doe");
+        assertThat(updatedPassenger.email()).isEqualTo("john.doe@example.com");
+        assertThat(updatedPassenger.phone()).isEqualTo("+0987654321");
+    }
+
+    @Test
+    void updatePassenger_ShouldReturnNotFound_WhenPassengerDoesNotExist() {
+        PassengerRequest updatedPassengerRequest = new PassengerRequest("John", "Doe", "john.doe@example.com", "+1234567890");
+
+        client.put()
+                .uri("/api/v1/passengers/{id}", 9999)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(updatedPassengerRequest)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+
+    @Test
     void deletePassenger_ShouldMarkPassengerAsDeleted_WhenPassengerExists() {
         PassengerRequest passengerRequest = new PassengerRequest("John", "Doe", "john.doe@example.com", "+1234567890");
         PassengerResponse createdPassenger = postPassenger(passengerRequest);
@@ -131,6 +169,7 @@ public class PassengerServiceIntegrationTest {
                 .exchange()
                 .expectStatus().isNotFound();
     }
+
     @Test
     void deletePassenger_ShouldReturnNotFound_WhenPassengerDoesNotExist() {
         client.delete()

@@ -18,6 +18,7 @@ import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 
@@ -41,7 +42,7 @@ public class DriverServiceImpl implements DriverService {
                 .subscribeOn(jdbcScheduler)
                 .map(driverMapper::toDriverResponse);
     }
-
+    @Transactional
     @Override
     public Mono<DriverResponse> createDriver(DriverRequest driverRequest) {
         return Mono.fromCallable(() -> {
@@ -49,6 +50,12 @@ public class DriverServiceImpl implements DriverService {
             driver.setIsDeleted(false);
 
             try {
+                List<Car> cars = driverMapper.carRequestsToCars(driverRequest.cars());
+                for (Car newCar : cars) {
+                    if (newCar.getId() == null && carRepository.existsByLicensePlate(newCar.getLicensePlate())) {
+                        throw new DuplicateResourceException("Car with license plate " + newCar.getLicensePlate() + " already exists.");
+                    }
+                }
                 Driver savedDriver = driverRepository.save(driver);
                 List<Long> carIds = driverRequest.cars().stream()
                         .map(CarRequest::id)
@@ -62,6 +69,7 @@ public class DriverServiceImpl implements DriverService {
                         .peek(car -> car.setDriver(savedDriver))
                         .peek(car -> car.setIsDeleted(false))
                         .collect(Collectors.toList());
+
 
                 List<Car> savedNewCars = carRepository.saveAll(newCars);
                 carRepository.saveAll(existingCars);
@@ -81,7 +89,7 @@ public class DriverServiceImpl implements DriverService {
         }).subscribeOn(jdbcScheduler);
     }
 
-
+    @Transactional
     @Override
     public Mono<DriverResponse> updateDriver(Long id, DriverRequest driverRequest) {
         return Mono.fromCallable(() -> {
