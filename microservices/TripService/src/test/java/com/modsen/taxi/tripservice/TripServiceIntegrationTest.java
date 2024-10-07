@@ -43,6 +43,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -282,6 +283,57 @@ public class TripServiceIntegrationTest {
         assertThat(ratingRequest.score()).isEqualTo(scoreRequest.score());
         assertThat(ratingRequest.comment()).isEqualTo(scoreRequest.comment());
     }
+
+    @Test
+    void getAllTrips_ShouldReturnFilteredTrips_WhenFilterParametersAreProvided() throws Exception {
+        TripRequest tripRequest1 = new TripRequest(
+                1L,
+                1L,
+                "Address 1",
+                "Destination 1",
+                "CREATED",
+                LocalDateTime.now().minusDays(1),
+                BigDecimal.valueOf(5.0)
+        );
+
+        TripRequest tripRequest2 = new TripRequest(
+                1L,
+                2L,
+                "Address 2",
+                "Destination 2",
+                "CREATED",
+                LocalDateTime.now().minusDays(1),
+                BigDecimal.valueOf(10.0)
+        );
+
+        TripRequest tripRequest3 = new TripRequest(
+                2L,
+                1L,
+                "Address 3",
+                "Destination 3",
+                "CREATED",
+                LocalDateTime.now().minusDays(1),
+                BigDecimal.valueOf(0.01)
+        );
+
+        postTrip(tripRequest1);
+        postTrip(tripRequest2);
+        postTrip(tripRequest3);
+
+        mockMvc.perform(get("/api/v1/trips")
+                        .param("driverId", "1")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.trips", hasSize(2)))
+                .andExpect(jsonPath("$.trips[0].price").value(5.0))
+                .andExpect(jsonPath("$.trips[1].price").value(10.0));
+
+    }
+
+
 
     private TripResponse postTrip(TripRequest tripRequest) throws Exception {
         String response = mockMvc.perform(post("/api/v1/trips")
