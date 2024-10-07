@@ -86,7 +86,8 @@ public class CarServiceIntegrationTest {
         CreateCarRequest carRequest = new CreateCarRequest("Toyota", "White", "ABC123");
         CarResponse createdCar = postCar(carRequest);
 
-        assert createdCar != null;
+        assertThat(createdCar).isNotNull();
+
         client.get()
                 .uri("/api/v1/cars/{id}", createdCar.id())
                 .accept(MediaType.APPLICATION_JSON)
@@ -183,7 +184,8 @@ public class CarServiceIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .expectBody(new ParameterizedTypeReference<Map<String, Object>>() {
+                })
                 .consumeWith(response -> {
                     Map<String, Object> responseBody = response.getResponseBody();
                     List<LinkedHashMap<String, Object>> carsMap =

@@ -42,43 +42,19 @@ public class DriverServiceImpl implements DriverService {
                 .subscribeOn(jdbcScheduler)
                 .map(driverMapper::toDriverResponse);
     }
-    @Transactional
-    @Override
+
     public Mono<DriverResponse> createDriver(DriverRequest driverRequest) {
         return Mono.fromCallable(() -> {
             Driver driver = driverMapper.toDriver(driverRequest);
             driver.setIsDeleted(false);
 
             try {
-                List<Car> cars = driverMapper.carRequestsToCars(driverRequest.cars());
-                for (Car newCar : cars) {
-                    if (newCar.getId() == null && carRepository.existsByLicensePlate(newCar.getLicensePlate())) {
-                        throw new DuplicateResourceException("Car with license plate " + newCar.getLicensePlate() + " already exists.");
-                    }
-                }
+                validateNewCars(driverRequest.cars());
+
                 Driver savedDriver = driverRepository.save(driver);
-                List<Long> carIds = driverRequest.cars().stream()
-                        .map(CarRequest::id)
-                        .collect(Collectors.toList());
+                List<Car> associatedCars = associateCarsWithDriver(driverRequest.cars(), savedDriver);
 
-                List<Car> existingCars = carRepository.findAllById(carIds);
-                existingCars.forEach(car -> car.setDriver(savedDriver));
-
-                List<Car> newCars = driverMapper.carRequestsToCars(driverRequest.cars()).stream()
-                        .filter(car -> car.getId() == null || !carIds.contains(car.getId()))
-                        .peek(car -> car.setDriver(savedDriver))
-                        .peek(car -> car.setIsDeleted(false))
-                        .collect(Collectors.toList());
-
-
-                List<Car> savedNewCars = carRepository.saveAll(newCars);
-                carRepository.saveAll(existingCars);
-
-                List<Car> allCars = Stream.concat(existingCars.stream(), savedNewCars.stream())
-                        .collect(Collectors.toList());
-
-                savedDriver.setCars(allCars);
-
+                savedDriver.setCars(associatedCars);
                 Driver finalSavedDriver = driverRepository.save(savedDriver);
 
                 return driverMapper.toDriverResponse(finalSavedDriver);
@@ -88,6 +64,38 @@ public class DriverServiceImpl implements DriverService {
             }
         }).subscribeOn(jdbcScheduler);
     }
+
+    private void validateNewCars(List<CarRequest> carRequests) {
+        List<Car> cars = driverMapper.carRequestsToCars(carRequests);
+        for (Car newCar : cars) {
+            if (newCar.getId() == null && carRepository.existsByLicensePlate(newCar.getLicensePlate())) {
+                throw new DuplicateResourceException("Car with license plate " + newCar.getLicensePlate() + " already exists.");
+            }
+        }
+    }
+
+
+    private List<Car> associateCarsWithDriver(List<CarRequest> carRequests, Driver savedDriver) {
+        List<Long> carIds = carRequests.stream()
+                .map(CarRequest::id)
+                .collect(Collectors.toList());
+
+        List<Car> existingCars = carRepository.findAllById(carIds);
+        existingCars.forEach(car -> car.setDriver(savedDriver));
+
+        List<Car> newCars = driverMapper.carRequestsToCars(carRequests).stream()
+                .filter(car -> car.getId() == null || !carIds.contains(car.getId()))
+                .peek(car -> car.setDriver(savedDriver))
+                .peek(car -> car.setIsDeleted(false))
+                .collect(Collectors.toList());
+
+        List<Car> savedNewCars = carRepository.saveAll(newCars);
+        carRepository.saveAll(existingCars);
+
+        return Stream.concat(existingCars.stream(), savedNewCars.stream())
+                .collect(Collectors.toList());
+    }
+
 
     @Transactional
     @Override
