@@ -32,12 +32,8 @@ public class RatingServiceImpl implements RatingService {
 
     @Override
     public RatingResponse createRating(RatingRequest ratingRequest) {
-        PassengerResponse passenger = passengerClient.getPassengerById(ratingRequest.passengerId());
-        DriverResponse driver = driverClient.getDriverById(ratingRequest.driverId());
-        boolean exists = ratingRepository.existsByDriverIdAndPassengerId(ratingRequest.driverId(), ratingRequest.passengerId());
-        if (exists) {
-            throw new DuplicateResourceException("Rating for this driver and passenger already exists.");
-        }
+        validatePassengerAndDriverExistence(ratingRequest.passengerId(), ratingRequest.driverId());
+
         Rating rating = ratingMapper.toRating(ratingRequest);
         Rating savedRating = ratingRepository.save(rating);
         return ratingMapper.toRatingResponse(savedRating);
@@ -56,8 +52,8 @@ public class RatingServiceImpl implements RatingService {
 
     @Override
     public RatingResponse updateRating(Long id, RatingRequest ratingRequest) {
-        PassengerResponse passenger = passengerClient.getPassengerById(ratingRequest.passengerId());
-        DriverResponse driver = driverClient.getDriverById(ratingRequest.driverId());
+        validatePassengerAndDriverExistence(ratingRequest.passengerId(), ratingRequest.driverId());
+
         Rating rating = ratingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Rating with id " + id + " not found."));
         ratingMapper.updateRatingFromRequest(ratingRequest, rating);
@@ -99,5 +95,18 @@ public class RatingServiceImpl implements RatingService {
         Rating rating = ratingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Rating with id " + id + " not found."));
         ratingRepository.delete(rating);
+    }
+    private void validatePassengerAndDriverExistence(Long passengerId, Long driverId) {
+        try {
+            passengerClient.getPassengerById(passengerId);
+        } catch (Exception ex) {
+            throw new ResourceNotFoundException("Passenger not found with id: " + passengerId);
+        }
+
+        try {
+            driverClient.getDriverById(driverId);
+        } catch (Exception ex) {
+            throw new ResourceNotFoundException("Driver not found with id: " + driverId);
+        }
     }
 }

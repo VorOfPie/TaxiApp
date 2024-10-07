@@ -41,8 +41,8 @@ public class TripServiceImpl implements TripService {
     @Override
     @Transactional
     public TripResponse createTrip(TripRequest tripRequest) {
-        PassengerResponse passenger = passengerClient.getPassengerById(tripRequest.passengerId());
-        DriverResponse driver = driverClient.getDriverById(tripRequest.driverId());
+        validatePassengerAndDriverExistence(tripRequest.passengerId(), tripRequest.driverId());
+
         Trip trip = tripMapper.toEntity(tripRequest);
         trip.setStatus(TripStatus.CREATED);
         Trip savedTrip = tripRepository.save(trip);
@@ -53,8 +53,8 @@ public class TripServiceImpl implements TripService {
     @Override
     @Transactional
     public TripResponse updateTrip(Long id, TripRequest tripRequest) {
-        PassengerResponse passenger = passengerClient.getPassengerById(tripRequest.passengerId());
-        DriverResponse driver = driverClient.getDriverById(tripRequest.driverId());
+        validatePassengerAndDriverExistence(tripRequest.passengerId(), tripRequest.driverId());
+
         Trip existingTrip = tripRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Trip not found with id: " + id));
         tripMapper.updateTripFromRequest(tripRequest, existingTrip);
@@ -133,11 +133,23 @@ public class TripServiceImpl implements TripService {
                     .build();
             kafkaTemplate.send(message);
 
-
         } catch (Exception ex) {
             throw new InvalidRequestException("Failed to send rating event via Kafka");
         }
     }
 
+    private void validatePassengerAndDriverExistence(Long passengerId, Long driverId) {
+        try {
+            PassengerResponse passenger = passengerClient.getPassengerById(passengerId);
+        } catch (Exception ex) {
+            throw new ResourceNotFoundException("Passenger not found with id: " + passengerId);
+        }
+
+        try {
+            DriverResponse driver = driverClient.getDriverById(driverId);
+        } catch (Exception ex) {
+            throw new ResourceNotFoundException("Driver not found with id: " + driverId);
+        }
+    }
 
 }
