@@ -152,24 +152,4 @@ public class DriverServiceImpl implements DriverService {
                 })
                 .subscribeOn(jdbcScheduler);
     }
-
-    private List<Car> handleCarsAssociation(DriverRequest driverRequest, Driver driver) {
-        List<Long> carIds = driverRequest.cars().stream()
-                .map(CarRequest::id)
-                .collect(Collectors.toList());
-
-        List<Car> existingCars = carRepository.findAllById(carIds);
-
-        existingCars.forEach(car -> car.setDriver(driver));
-
-        List<Car> newCars = driverMapper.carRequestsToCars(driverRequest.cars()).stream()
-                .filter(car -> car.getId() == null || !carIds.contains(car.getId()))
-                .peek(car -> car.setDriver(driver))
-                .collect(Collectors.toList());
-
-        List<Car> savedNewCars = carRepository.saveAll(newCars);
-        carRepository.saveAll(existingCars);
-
-        return Stream.concat(existingCars.stream(), savedNewCars.stream()).collect(Collectors.toList());
-    }
 }

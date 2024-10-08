@@ -14,22 +14,17 @@ import io.cucumber.java.en.When;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Assertions;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Map;
 
-@SpringBootTest
 @RequiredArgsConstructor
 public class PassengerStepsDefinition {
 
-    @Autowired
     private final PassengerService passengerService;
 
-    @Autowired
     private final PassengerRepository passengerRepository;
 
     private PassengerRequest passengerRequest;

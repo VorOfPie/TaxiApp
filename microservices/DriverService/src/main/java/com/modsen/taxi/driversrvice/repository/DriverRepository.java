@@ -14,4 +14,7 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
     boolean existsByPhone(String phone);
     Optional<Driver> findByIdAndIsDeletedFalse(Long id);
 
+    void deleteDriverByPhone(String phone);
+
+    Optional<Driver> findDriverByPhoneAndIsDeletedFalse(String phone);
 }

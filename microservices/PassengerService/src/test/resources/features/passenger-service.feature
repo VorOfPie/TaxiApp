@@ -50,4 +50,3 @@ Feature: Passenger Service Operations
     Then the response should contain 2 passengers
     And the first passenger's first name should be "John"
     And the first passenger's last name should be "Doe"
-

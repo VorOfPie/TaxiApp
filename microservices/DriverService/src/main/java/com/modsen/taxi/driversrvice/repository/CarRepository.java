@@ -10,6 +10,12 @@ import java.util.Optional;
 @Repository
 public interface CarRepository extends JpaRepository<Car, Long> {
     List<Car> findAllByIsDeletedFalse();
+
     boolean existsByLicensePlate(String licensePlate);
+
     Optional<Car> findByIdAndIsDeletedFalse(Long id);
+
+    Optional<Car> findByLicensePlateAndIsDeletedFalse(String licensePlate);
+
+    void deleteCarByLicensePlate(String licensePlate);
 }

@@ -7,7 +7,8 @@ import org.junit.runner.RunWith;
 @RunWith(Cucumber.class)
 @CucumberOptions(
         features = "src/test/resources/features",
-        glue = "com.modsen.taxi.passengerservice.stepdefs",
+        glue = "com.modsen.taxi.passengerservice",
         plugin = {"pretty", "json:target/cucumber-report.json"}
-)public class PassengerServiceCucumberTest {
+)
+public class CucumberTestRunner {
 }

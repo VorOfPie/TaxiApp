@@ -1,6 +1,5 @@
 package com.modsen.taxi.driversrvice;
 
-import com.modsen.taxi.driversrvice.dto.request.CarRequest;
 import com.modsen.taxi.driversrvice.dto.request.CreateCarRequest;
 import com.modsen.taxi.driversrvice.dto.response.CarResponse;
 import com.modsen.taxi.driversrvice.repository.CarRepository;
