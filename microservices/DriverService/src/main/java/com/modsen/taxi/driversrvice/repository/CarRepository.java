@@ -17,5 +17,5 @@ public interface CarRepository extends JpaRepository<Car, Long> {
 
     Optional<Car> findByLicensePlateAndIsDeletedFalse(String licensePlate);
 
-    void deleteCarByLicensePlate(String licensePlate);
+    void deleteByLicensePlate(String licensePlate);
 }

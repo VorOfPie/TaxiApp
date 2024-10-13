@@ -1,5 +1,6 @@
-package com.modsen.taxi.passengerservice;
+package com.modsen.taxi.driversrvice.driver;
 
+import com.modsen.taxi.driversrvice.DriverServiceApplication;
 import io.cucumber.java.AfterAll;
 import io.cucumber.java.BeforeAll;
 import io.cucumber.spring.CucumberContextConfiguration;
@@ -11,7 +12,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @CucumberContextConfiguration
-@SpringBootTest(classes = PassengerServiceApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = DriverServiceApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 public class CucumberSpringConfiguration {
 
@@ -23,7 +24,8 @@ public class CucumberSpringConfiguration {
         DockerImageName myImage = DockerImageName.parse("postgres:16")
                 .asCompatibleSubstituteFor("postgres");
         postgresContainer = new PostgreSQLContainer(myImage)
-                .withDatabaseName("passenger_db")
+                .withDatabaseName("driver_db")
+                .withDatabaseName("car_db")
                 .withUsername("username")
                 .withPassword("password");
         postgresContainer.start();

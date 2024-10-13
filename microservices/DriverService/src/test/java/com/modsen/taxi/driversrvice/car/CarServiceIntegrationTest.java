@@ -1,4 +1,4 @@
-package com.modsen.taxi.driversrvice;
+package com.modsen.taxi.driversrvice.car;
 
 import com.modsen.taxi.driversrvice.dto.request.CreateCarRequest;
 import com.modsen.taxi.driversrvice.dto.response.CarResponse;

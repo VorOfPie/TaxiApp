@@ -11,10 +11,10 @@ import java.util.Optional;
 @Repository
 public interface DriverRepository extends JpaRepository<Driver, Long> {
     List<Driver> findAllByIsDeletedFalse();
+
     boolean existsByPhone(String phone);
+
     Optional<Driver> findByIdAndIsDeletedFalse(Long id);
 
-    void deleteDriverByPhone(String phone);
-
-    Optional<Driver> findDriverByPhoneAndIsDeletedFalse(String phone);
+    void deleteByPhone(String phone);
 }

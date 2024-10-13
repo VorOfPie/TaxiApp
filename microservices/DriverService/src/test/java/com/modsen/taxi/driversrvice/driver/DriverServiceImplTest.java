@@ -1,4 +1,4 @@
-package com.modsen.taxi.driversrvice;
+package com.modsen.taxi.driversrvice.driver;
 
 import com.modsen.taxi.driversrvice.domain.Car;
 import com.modsen.taxi.driversrvice.domain.Driver;
