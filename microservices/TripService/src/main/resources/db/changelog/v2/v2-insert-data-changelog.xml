@@ -100,7 +100,7 @@
             <column name="price" value="45.60"/>
         </insert>
     </changeSet>
-    
+
 
     <changeSet id="9" author="Voropay Matvey">
         <insert tableName="trips">

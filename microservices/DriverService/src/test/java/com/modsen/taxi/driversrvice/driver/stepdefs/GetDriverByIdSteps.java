@@ -1,7 +1,7 @@
 package com.modsen.taxi.driversrvice.driver.stepdefs;
 
-import com.modsen.taxi.driversrvice.dto.request.DriverRequest;
 import com.modsen.taxi.driversrvice.dto.request.CarRequest;
+import com.modsen.taxi.driversrvice.dto.request.DriverRequest;
 import com.modsen.taxi.driversrvice.dto.response.DriverResponse;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;

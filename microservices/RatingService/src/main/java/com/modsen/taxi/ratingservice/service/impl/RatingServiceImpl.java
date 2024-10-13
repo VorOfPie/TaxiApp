@@ -4,8 +4,6 @@ import com.modsen.taxi.ratingservice.config.DriverClient;
 import com.modsen.taxi.ratingservice.config.PassengerClient;
 import com.modsen.taxi.ratingservice.domain.Rating;
 import com.modsen.taxi.ratingservice.dto.RatingRequest;
-import com.modsen.taxi.ratingservice.dto.response.DriverResponse;
-import com.modsen.taxi.ratingservice.dto.response.PassengerResponse;
 import com.modsen.taxi.ratingservice.dto.response.RatingResponse;
 import com.modsen.taxi.ratingservice.error.exception.DuplicateResourceException;
 import com.modsen.taxi.ratingservice.error.exception.ResourceNotFoundException;
@@ -96,6 +94,7 @@ public class RatingServiceImpl implements RatingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Rating with id " + id + " not found."));
         ratingRepository.delete(rating);
     }
+
     private void validatePassengerAndDriverExistence(Long passengerId, Long driverId) {
         try {
             passengerClient.getPassengerById(passengerId);

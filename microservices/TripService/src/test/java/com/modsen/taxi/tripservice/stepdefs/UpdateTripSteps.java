@@ -86,6 +86,7 @@ public class UpdateTripSteps {
                 .andExpect(jsonPath("$.status").value(expectedStatus))
                 .andExpect(jsonPath("$.price").value(new BigDecimal(expectedPrice)));
     }
+
     @When("I try to update a trip with id {long} and new destination {string}, new price {string}")
     public void tryToUpdateTrip(long tripId, String newDestination, String newPrice) throws Exception {
         tripRequest = new TripRequest(

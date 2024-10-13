@@ -6,7 +6,6 @@ import com.modsen.taxi.driversrvice.dto.response.CarResponse;
 import com.modsen.taxi.driversrvice.dto.response.DriverResponse;
 import com.modsen.taxi.driversrvice.repository.CarRepository;
 import com.modsen.taxi.driversrvice.repository.DriverRepository;
-import org.junit.Assert;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;

@@ -2,7 +2,6 @@ package com.modsen.taxi.passengerservice.stepdefs;
 
 import com.modsen.taxi.passengerservice.dto.PassengerRequest;
 import com.modsen.taxi.passengerservice.dto.PassengerResponse;
-import com.modsen.taxi.passengerservice.repository.PassengerRepository;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -53,10 +52,12 @@ public class DeletePassengerSteps {
                 .uri("/api/v1/passengers/{id}", id)
                 .exchange();
     }
+
     @Then("an error should be returned indicating the passenger does not exist for delete")
     public void anErrorShouldBeReturnedIndicatingThePassengerDoesNotExist() {
         responseSpec.expectStatus().isNotFound();
     }
+
     private PassengerResponse postPassenger(PassengerRequest passengerRequest) {
         return client.post()
                 .uri("/api/v1/passengers")

@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 
 public record CarRequest(
         @NotNull(message = "Car ID is required")
-        @Positive(message ="Car Id must be positive")
+        @Positive(message = "Car Id must be positive")
         Long id,
 
         @NotBlank(message = "Brand is required")

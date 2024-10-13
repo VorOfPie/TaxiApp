@@ -7,7 +7,6 @@
         objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS">
 
 
-
     <changeSet id="1" author="Voropay Matvey">
         <createTable tableName="drivers">
             <column name="id" type="BIGINT" autoIncrement="true">

@@ -2,8 +2,8 @@ package com.modsen.taxi.tripservice.dto.request;
 
 import jakarta.validation.constraints.*;
 
-import java.time.LocalDateTime;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public record TripRequest(
         @NotNull(message = "Driver ID cannot be null")
@@ -34,4 +34,5 @@ public record TripRequest(
         @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
         @Digits(integer = 10, fraction = 2, message = "Price must have up to 10 digits before the decimal and 2 digits after")
         BigDecimal price
-) { }
+) {
+}

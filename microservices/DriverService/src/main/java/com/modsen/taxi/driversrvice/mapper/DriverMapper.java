@@ -1,8 +1,8 @@
 package com.modsen.taxi.driversrvice.mapper;
 
-import com.modsen.taxi.driversrvice.dto.request.CarRequest;
-import com.modsen.taxi.driversrvice.domain.Driver;
 import com.modsen.taxi.driversrvice.domain.Car;
+import com.modsen.taxi.driversrvice.domain.Driver;
+import com.modsen.taxi.driversrvice.dto.request.CarRequest;
 import com.modsen.taxi.driversrvice.dto.request.DriverRequest;
 import com.modsen.taxi.driversrvice.dto.response.DriverResponse;
 import org.mapstruct.Mapper;

@@ -22,4 +22,5 @@ public record RatingRequest(
 
         @Size(max = 500, message = "Comment cannot exceed 500 characters")
         String comment
-) {}
+) {
+}

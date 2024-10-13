@@ -20,9 +20,7 @@ import java.time.LocalDateTime;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 public class GetTripByIdSteps {
 
@@ -41,6 +39,7 @@ public class GetTripByIdSteps {
     private TripRequest tripRequest;
     private TripResponse tripResponse;
     private Long tripId;
+
     @Given("a valid trip request with driver ID {long}, passenger ID {long}, origin {string}, destination {string}, status {string}, and price {string}")
     public void aValidTripRequest(Long driverId, Long passengerId, String origin, String destination, String status, String price) throws Exception {
         tripRequest = new TripRequest(driverId, passengerId, origin, destination, status, LocalDateTime.now(), new BigDecimal(price));
