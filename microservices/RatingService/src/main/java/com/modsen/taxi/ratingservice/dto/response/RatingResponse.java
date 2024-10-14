@@ -6,4 +6,5 @@ public record RatingResponse(
         Long passengerId,
         Double score,
         String comment
-) {}
+) {
+}

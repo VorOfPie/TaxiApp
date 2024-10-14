@@ -107,24 +107,9 @@ public class DriverServiceImpl implements DriverService {
 
             driverMapper.updateDriverFromRequest(driverRequest, driver);
 
-            List<Long> carIds = driverRequest.cars().stream()
-                    .map(CarRequest::id)
-                    .collect(Collectors.toList());
+            List<Car> associatedCars = associateCarsWithDriver(driverRequest.cars(), driver);
 
-            List<Car> existingCars = carRepository.findAllById(carIds);
-            existingCars.forEach(car -> car.setDriver(driver));
-
-            List<Car> newCars = driverMapper.carRequestsToCars(driverRequest.cars()).stream()
-                    .filter(car -> car.getId() == null || !carIds.contains(car.getId()))
-                    .peek(car -> car.setDriver(driver))
-                    .peek(car -> car.setIsDeleted(false))
-                    .collect(Collectors.toList());
-
-            carRepository.saveAll(existingCars);
-            List<Car> savedCars = carRepository.saveAll(newCars);
-
-            driver.setCars(Stream.concat(existingCars.stream(), savedCars.stream()).collect(Collectors.toList()));
-
+            driver.setCars(associatedCars);
             Driver updatedDriver = driverRepository.save(driver);
 
             return driverMapper.toDriverResponse(updatedDriver);
@@ -166,25 +151,5 @@ public class DriverServiceImpl implements DriverService {
                     return drivers.map(driverMapper::toDriverResponse);
                 })
                 .subscribeOn(jdbcScheduler);
-    }
-
-    private List<Car> handleCarsAssociation(DriverRequest driverRequest, Driver driver) {
-        List<Long> carIds = driverRequest.cars().stream()
-                .map(CarRequest::id)
-                .collect(Collectors.toList());
-
-        List<Car> existingCars = carRepository.findAllById(carIds);
-
-        existingCars.forEach(car -> car.setDriver(driver));
-
-        List<Car> newCars = driverMapper.carRequestsToCars(driverRequest.cars()).stream()
-                .filter(car -> car.getId() == null || !carIds.contains(car.getId()))
-                .peek(car -> car.setDriver(driver))
-                .collect(Collectors.toList());
-
-        List<Car> savedNewCars = carRepository.saveAll(newCars);
-        carRepository.saveAll(existingCars);
-
-        return Stream.concat(existingCars.stream(), savedNewCars.stream()).collect(Collectors.toList());
     }
 }

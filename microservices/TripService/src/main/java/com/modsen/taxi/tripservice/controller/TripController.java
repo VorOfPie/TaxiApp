@@ -83,7 +83,7 @@ public class TripController {
     }
 
     @PostMapping("/{id}/close")
-    public ResponseEntity<Void> closeTrip(@PathVariable Long id, @RequestBody @Valid ScoreRequest scoreRequest){
+    public ResponseEntity<Void> closeTrip(@PathVariable Long id, @RequestBody @Valid ScoreRequest scoreRequest) {
         tripService.closeAndRateTrip(id, scoreRequest);
         return new ResponseEntity<>(HttpStatus.OK);
     }

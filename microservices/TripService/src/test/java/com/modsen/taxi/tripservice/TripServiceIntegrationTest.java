@@ -26,7 +26,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
@@ -48,7 +47,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@EnableKafka
+
 @EmbeddedKafka(partitions = 1, topics = {"rating-topic"}, brokerProperties = {
         "listeners=PLAINTEXT://localhost:9092"})
 @Testcontainers
@@ -332,7 +331,6 @@ public class TripServiceIntegrationTest {
                 .andExpect(jsonPath("$.trips[1].price").value(10.0));
 
     }
-
 
 
     private TripResponse postTrip(TripRequest tripRequest) throws Exception {

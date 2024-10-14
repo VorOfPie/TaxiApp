@@ -1,4 +1,4 @@
-package com.modsen.taxi.driversrvice;
+package com.modsen.taxi.driversrvice.driver;
 
 import com.modsen.taxi.driversrvice.dto.request.CarRequest;
 import com.modsen.taxi.driversrvice.dto.request.DriverRequest;
@@ -95,7 +95,7 @@ public class DriverServiceIntegrationTest {
 
         DriverResponse createdDriver = postDriver(new DriverRequest("John", "Doe", "+1234567890", "Male", cars));
 
-        assert createdDriver != null;
+        assertThat(createdDriver).isNotNull();
         client.get()
                 .uri("/api/v1/drivers/{id}", createdDriver.id())
                 .accept(MediaType.APPLICATION_JSON)

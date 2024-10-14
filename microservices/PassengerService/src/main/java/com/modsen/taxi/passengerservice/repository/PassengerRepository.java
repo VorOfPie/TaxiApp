@@ -14,4 +14,8 @@ public interface PassengerRepository extends JpaRepository<Passenger, Long> {
     boolean existsByEmail(String email);
 
     Optional<Passenger> findByEmailAndIsDeletedFalse(String email);
+
+    void deletePassengerByEmail(String email);
+
+    void deleteByEmail(String email);
 }
