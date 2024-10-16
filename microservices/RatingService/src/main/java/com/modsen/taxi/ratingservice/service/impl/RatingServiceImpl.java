@@ -30,6 +30,8 @@ public class RatingServiceImpl implements RatingService {
 
     @Override
     public RatingResponse createRating(RatingRequest ratingRequest) {
+        if (ratingRepository.existsByDriverIdAndPassengerId(ratingRequest.driverId(), ratingRequest.passengerId()))
+            throw new DuplicateResourceException("Rating for this driver and passenger already exists.");
         validatePassengerAndDriverExistence(ratingRequest.passengerId(), ratingRequest.driverId());
 
         Rating rating = ratingMapper.toRating(ratingRequest);
