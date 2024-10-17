@@ -18,7 +18,7 @@ Contract.make {
         body(
                 status: 404,
                 message: "Driver with id 999 not found",
-                timestamp: $(regex('\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6,7}Z'))
+                timestamp: $(regex('\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6,7}'))
         )
     }
 }

@@ -37,7 +37,7 @@ public class DriverServiceImpl implements DriverService {
     @Override
     public Mono<DriverResponse> getDriverById(Long id) {
         return Mono.fromCallable(() -> driverRepository.findByIdAndIsDeletedFalse(id)
-                        .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + id)))
+                        .orElseThrow(() -> new ResourceNotFoundException("Driver with id " + id + " not found")))
                 .subscribeOn(jdbcScheduler)
                 .map(driverMapper::toDriverResponse);
     }
@@ -100,7 +100,7 @@ public class DriverServiceImpl implements DriverService {
     public Mono<DriverResponse> updateDriver(Long id, DriverRequest driverRequest) {
         return Mono.fromCallable(() -> {
             Driver driver = driverRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + id));
+                    .orElseThrow(() -> new ResourceNotFoundException("Driver with id " + id + " not found"));
 
             driverMapper.updateDriverFromRequest(driverRequest, driver);
 
@@ -118,7 +118,7 @@ public class DriverServiceImpl implements DriverService {
     public Mono<Void> deleteDriver(Long id) {
         return Mono.fromRunnable(() -> {
                     Driver driver = driverRepository.findById(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + id));
+                            .orElseThrow(() -> new ResourceNotFoundException("Driver with id " + id + " not found"));
                     driver.setIsDeleted(true);
                     driverRepository.save(driver);
                 })

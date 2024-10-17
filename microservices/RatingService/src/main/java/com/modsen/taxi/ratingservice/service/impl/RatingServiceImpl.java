@@ -101,13 +101,13 @@ public class RatingServiceImpl implements RatingService {
         try {
             passengerClient.getPassengerById(passengerId);
         } catch (Exception ex) {
-            throw new ResourceNotFoundException("Passenger not found with id: " + passengerId);
+            throw new ResourceNotFoundException("Passenger with id " + passengerId + " not found");
         }
 
         try {
             driverClient.getDriverById(driverId);
         } catch (Exception ex) {
-            throw new ResourceNotFoundException("Driver not found with id: " + driverId);
+            throw new ResourceNotFoundException("Driver with id " + driverId + " not found");
         }
     }
 }
