@@ -28,7 +28,7 @@ public class CarServiceImpl implements CarService {
     @Override
     public Mono<CarResponse> getCarById(Long id) {
         return Mono.fromCallable(() -> carRepository.findByIdAndIsDeletedFalse(id)
-                        .orElseThrow(() -> new ResourceNotFoundException("Car not found with id: " + id)))
+                        .orElseThrow(() -> new ResourceNotFoundException("Car with id: " + id + " not found")))
                 .subscribeOn(jdbcScheduler)
                 .map(carMapper::toCarResponse);
     }
@@ -52,7 +52,7 @@ public class CarServiceImpl implements CarService {
     public Mono<CarResponse> updateCar(Long id, CreateCarRequest createCarRequest) {
         return Mono.fromCallable(() -> {
                     Car car = carRepository.findByIdAndIsDeletedFalse(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Car not found with id: " + id));
+                            .orElseThrow(() -> new ResourceNotFoundException("Car with id: " + id + " not found"));
                     carMapper.updateCarFromRequest(createCarRequest, car);
                     return carRepository.save(car);
                 })
@@ -64,7 +64,7 @@ public class CarServiceImpl implements CarService {
     public Mono<Void> deleteCar(Long id) {
         return Mono.fromRunnable(() -> {
                     Car car = carRepository.findByIdAndIsDeletedFalse(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Car not found with id: " + id));
+                            .orElseThrow(() -> new ResourceNotFoundException("Car with id: " + id + " not found"));
                     car.setIsDeleted(true);
                     carRepository.save(car);
                 })

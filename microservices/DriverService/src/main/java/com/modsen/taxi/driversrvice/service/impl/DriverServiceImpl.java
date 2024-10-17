@@ -12,7 +12,6 @@ import com.modsen.taxi.driversrvice.repository.CarRepository;
 import com.modsen.taxi.driversrvice.repository.DriverRepository;
 import com.modsen.taxi.driversrvice.service.DriverService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
@@ -38,7 +37,7 @@ public class DriverServiceImpl implements DriverService {
     @Override
     public Mono<DriverResponse> getDriverById(Long id) {
         return Mono.fromCallable(() -> driverRepository.findByIdAndIsDeletedFalse(id)
-                        .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + id)))
+                        .orElseThrow(() -> new ResourceNotFoundException("Driver with id " + id + " not found")))
                 .subscribeOn(jdbcScheduler)
                 .map(driverMapper::toDriverResponse);
     }
@@ -46,23 +45,21 @@ public class DriverServiceImpl implements DriverService {
     @Override
     public Mono<DriverResponse> createDriver(DriverRequest driverRequest) {
         return Mono.fromCallable(() -> {
+            if (driverRepository.existsByPhone(driverRequest.phone()))
+                throw new DuplicateResourceException("Driver with phone number " + driverRequest.phone() + " already exists.");
             Driver driver = driverMapper.toDriver(driverRequest);
             driver.setIsDeleted(false);
+            validateNewCars(driverRequest.cars());
 
-            try {
-                validateNewCars(driverRequest.cars());
+            Driver savedDriver = driverRepository.save(driver);
+            List<Car> associatedCars = associateCarsWithDriver(driverRequest.cars(), savedDriver);
 
-                Driver savedDriver = driverRepository.save(driver);
-                List<Car> associatedCars = associateCarsWithDriver(driverRequest.cars(), savedDriver);
+            savedDriver.setCars(associatedCars);
+            Driver finalSavedDriver = driverRepository.save(savedDriver);
 
-                savedDriver.setCars(associatedCars);
-                Driver finalSavedDriver = driverRepository.save(savedDriver);
+            return driverMapper.toDriverResponse(finalSavedDriver);
 
-                return driverMapper.toDriverResponse(finalSavedDriver);
 
-            } catch (DataIntegrityViolationException e) {
-                throw new DuplicateResourceException("Driver with phone number " + driver.getPhone() + " already exists.");
-            }
         }).subscribeOn(jdbcScheduler);
     }
 
@@ -103,7 +100,7 @@ public class DriverServiceImpl implements DriverService {
     public Mono<DriverResponse> updateDriver(Long id, DriverRequest driverRequest) {
         return Mono.fromCallable(() -> {
             Driver driver = driverRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + id));
+                    .orElseThrow(() -> new ResourceNotFoundException("Driver with id " + id + " not found"));
 
             driverMapper.updateDriverFromRequest(driverRequest, driver);
 
@@ -121,7 +118,7 @@ public class DriverServiceImpl implements DriverService {
     public Mono<Void> deleteDriver(Long id) {
         return Mono.fromRunnable(() -> {
                     Driver driver = driverRepository.findById(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + id));
+                            .orElseThrow(() -> new ResourceNotFoundException("Driver with id " + id + " not found"));
                     driver.setIsDeleted(true);
                     driverRepository.save(driver);
                 })

@@ -56,7 +56,7 @@ public class TripServiceImpl implements TripService {
         validatePassengerAndDriverExistence(tripRequest.passengerId(), tripRequest.driverId());
 
         Trip existingTrip = tripRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Trip not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Trip with id " + id + " not found"));
         tripMapper.updateTripFromRequest(tripRequest, existingTrip);
         Trip updatedTrip = tripRepository.save(existingTrip);
         return tripMapper.toDTO(updatedTrip);
@@ -65,7 +65,7 @@ public class TripServiceImpl implements TripService {
     @Override
     public TripResponse getTripById(Long id) {
         Trip trip = tripRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Trip not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Trip not with id " + id + " not found"));
         return tripMapper.toDTO(trip);
     }
 
@@ -96,7 +96,7 @@ public class TripServiceImpl implements TripService {
     @Transactional
     public TripResponse updateTripStatus(Long id, String status) {
         Trip existingTrip = tripRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Trip not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Trip with id " + id + " not found"));
 
         existingTrip.setStatus(TripStatus.valueOf(status.toUpperCase()));
         Trip updatedTrip = tripRepository.save(existingTrip);
@@ -115,7 +115,7 @@ public class TripServiceImpl implements TripService {
     @Transactional
     public void closeAndRateTrip(Long id, ScoreRequest scoreRequest) {
         Trip trip = tripRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Trip not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Trip with id " + id + " not found"));
 
         try {
             RatingRequest ratingRequest = RatingRequest.builder()
@@ -142,13 +142,13 @@ public class TripServiceImpl implements TripService {
         try {
             PassengerResponse passenger = passengerClient.getPassengerById(passengerId);
         } catch (Exception ex) {
-            throw new ResourceNotFoundException("Passenger not found with id: " + passengerId);
+            throw new ResourceNotFoundException("Passenger with id " + passengerId + " not found");
         }
 
         try {
             DriverResponse driver = driverClient.getDriverById(driverId);
         } catch (Exception ex) {
-            throw new ResourceNotFoundException("Driver not found with id: " + driverId);
+            throw new ResourceNotFoundException("Driver with id " + driverId + " not found");
         }
     }
 
