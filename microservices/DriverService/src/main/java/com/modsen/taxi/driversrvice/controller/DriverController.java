@@ -3,6 +3,7 @@ package com.modsen.taxi.driversrvice.controller;
 import com.modsen.taxi.driversrvice.dto.request.DriverRequest;
 import com.modsen.taxi.driversrvice.dto.response.DriverResponse;
 import com.modsen.taxi.driversrvice.service.DriverService;
+import com.modsen.taxi.driversrvice.swagger.DriverApi;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,7 +21,7 @@ import java.util.Map;
 @RequestMapping("/api/v1/drivers")
 @Validated
 @RequiredArgsConstructor
-public class DriverController {
+public class DriverController implements DriverApi {
 
     private final DriverService driverService;
 
