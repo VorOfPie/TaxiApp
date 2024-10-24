@@ -42,7 +42,7 @@ open class PassengerServiceImpl(
     override fun updatePassenger(id: Long, passengerRequest: PassengerRequest): Mono<PassengerResponse> {
         return Mono.fromCallable {
             val passenger = passengerRepository.findByIdAndIsDeletedFalse(id)
-                ?.orElseThrow { ResourceNotFoundException("Passenger with id $id not found.") }
+                .orElseThrow { ResourceNotFoundException("Passenger with id $id not found.") }
             passengerRequest.updatePassenger(passenger!!)
             passengerRepository.save(passenger)
         }
@@ -53,7 +53,7 @@ open class PassengerServiceImpl(
     override fun getPassengerById(id: Long): Mono<PassengerResponse> {
         return Mono.fromCallable {
             passengerRepository.findByIdAndIsDeletedFalse(id)
-                ?.orElseThrow { ResourceNotFoundException("Passenger with id $id not found.") }
+                .orElseThrow { ResourceNotFoundException("Passenger with id $id not found.") }
         }
             .subscribeOn(jdbcScheduler)
             .mapNotNull { passenger -> passenger?.toResponse() }
@@ -95,14 +95,14 @@ open class PassengerServiceImpl(
     override fun deletePassenger(id: Long): Mono<Void> {
         return Mono.fromCallable {
             val passenger = passengerRepository.findByIdAndIsDeletedFalse(id)
-                ?.orElseThrow { ResourceNotFoundException("Passenger with id $id not found.") }
-            passenger?.isDeleted = true
+                .orElseThrow { ResourceNotFoundException("Passenger with id $id not found.") }
+            passenger.isDeleted = true
             passengerRepository.save(passenger)
         }
             .subscribeOn(jdbcScheduler)
             .then()
     }
-    fun checkNullOrEmpty(value: Optional<Any>): Optional<Any> {
+    private fun checkNullOrEmpty(value: Optional<Any>): Optional<Any> {
         return if (value.isPresent && (value.get() as? String)?.isNotEmpty() == true) {
             value
         } else {

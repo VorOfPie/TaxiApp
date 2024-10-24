@@ -1,95 +1,94 @@
-package com.modsen.taxi.passengerservice.stepdefs;
+package com.modsen.taxi.passengerservice.stepdefs
 
-import com.modsen.taxi.passengerservice.dto.PassengerRequest;
-import com.modsen.taxi.passengerservice.dto.PassengerResponse;
-import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
-import io.cucumber.java.en.When;
-import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.reactive.server.WebTestClient;
+import com.modsen.taxi.passengerservice.dto.PassengerRequest
+import com.modsen.taxi.passengerservice.dto.PassengerResponse
+import io.cucumber.java.en.Given
+import io.cucumber.java.en.Then
+import io.cucumber.java.en.When
+import jakarta.transaction.Transactional
+import org.assertj.core.api.Assertions.assertThat
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.MediaType
+import org.springframework.test.web.reactive.server.WebTestClient
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-public class GetPassengerByIdSteps {
+class GetPassengerByIdSteps {
 
     @Autowired
-    private WebTestClient client;
+    private lateinit var client: WebTestClient
 
-    private PassengerResponse createdPassengerResponse;
-    private WebTestClient.ResponseSpec responseSpec;
-    private PassengerResponse passengerResponse;
+    private var createdPassengerResponse: PassengerResponse? = null
+    private lateinit var responseSpec: WebTestClient.ResponseSpec
+    private var passengerResponse: PassengerResponse? = null
 
     @Given("the passenger with email {string} exists to get")
     @Transactional
-    public void thePassengerExists(String email) {
-        PassengerRequest passengerRequest = new PassengerRequest("Alice", "Smith", email, "+1234567890");
-        createdPassengerResponse = postPassenger(passengerRequest);
-        assertThat(createdPassengerResponse).isNotNull();
+    fun thePassengerExists(email: String) {
+        val passengerRequest = PassengerRequest("Alice", "Smith", email, "+1234567890")
+        createdPassengerResponse = postPassenger(passengerRequest)
+        assertThat(createdPassengerResponse).isNotNull
     }
 
     @When("I get the passenger with ID")
-    public void iGetThePassengerWithId() {
-        Long id = createdPassengerResponse.id();
+    fun iGetThePassengerWithId() {
+        val id = createdPassengerResponse?.id
         responseSpec = client.get()
-                .uri("/api/v1/passengers/{id}", id)
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange();
+            .uri("/api/v1/passengers/{id}", id)
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
     }
 
     @Then("the response status should be {int}")
-    public void theResponseStatusShouldBe(int expectedStatus) {
-        responseSpec.expectStatus().isEqualTo(expectedStatus);
-        passengerResponse = responseSpec.expectBody(PassengerResponse.class).returnResult().getResponseBody();
+    fun theResponseStatusShouldBe(expectedStatus: Int) {
+        responseSpec.expectStatus().isEqualTo(expectedStatus)
+        passengerResponse = responseSpec.expectBody(PassengerResponse::class.java).returnResult().responseBody
     }
 
     @Then("the passenger's first name should be {string}")
-    public void thePassengerFirstNameShouldBe(String expectedFirstName) {
-        assertThat(passengerResponse).isNotNull();
-        assertThat(passengerResponse.firstName()).isEqualTo(expectedFirstName);
+    fun thePassengerFirstNameShouldBe(expectedFirstName: String) {
+        assertThat(passengerResponse).isNotNull
+        assertThat(passengerResponse?.firstName).isEqualTo(expectedFirstName)
     }
 
     @Then("the passenger's last name should be {string}")
-    public void thePassengerLastNameShouldBe(String expectedLastName) {
-        assertThat(passengerResponse).isNotNull();
-        assertThat(passengerResponse.lastName()).isEqualTo(expectedLastName);
+    fun thePassengerLastNameShouldBe(expectedLastName: String) {
+        assertThat(passengerResponse).isNotNull
+        assertThat(passengerResponse?.lastName).isEqualTo(expectedLastName)
     }
 
     @Then("the passenger's email should be {string}")
-    public void thePassengerEmailShouldBe(String expectedEmail) {
-        assertThat(passengerResponse).isNotNull();
-        assertThat(passengerResponse.email()).isEqualTo(expectedEmail);
+    fun thePassengerEmailShouldBe(expectedEmail: String) {
+        assertThat(passengerResponse).isNotNull
+        assertThat(passengerResponse?.email).isEqualTo(expectedEmail)
     }
 
     @Then("the passenger's phone should be {string}")
-    public void thePassengerPhoneShouldBe(String expectedPhone) {
-        assertThat(passengerResponse).isNotNull();
-        assertThat(passengerResponse.phone()).isEqualTo(expectedPhone);
+    fun thePassengerPhoneShouldBe(expectedPhone: String) {
+        assertThat(passengerResponse).isNotNull
+        assertThat(passengerResponse?.phone).isEqualTo(expectedPhone)
     }
 
     @When("I try to get a passenger with ID {int}")
-    public void iTryToGetAPassengerWithId(int id) {
+    fun iTryToGetAPassengerWithId(id: Int) {
         responseSpec = client.get()
-                .uri("/api/v1/passengers/{id}", id)
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange();
+            .uri("/api/v1/passengers/{id}", id)
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
     }
 
     @Then("the passenger with ID {int} should not be found")
-    public void thePassengerShouldNotBeFound(int id) {
-        responseSpec.expectStatus().isNotFound();
+    fun thePassengerShouldNotBeFound(id: Int) {
+        responseSpec.expectStatus().isNotFound
     }
 
-    private PassengerResponse postPassenger(PassengerRequest passengerRequest) {
+    private fun postPassenger(passengerRequest: PassengerRequest): PassengerResponse {
         return client.post()
-                .uri("/api/v1/passengers")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(passengerRequest)
-                .exchange()
-                .expectStatus().isCreated()
-                .expectBody(PassengerResponse.class)
-                .returnResult()
-                .getResponseBody();
+            .uri("/api/v1/passengers")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(passengerRequest)
+            .exchange()
+            .expectStatus().isCreated
+            .expectBody(PassengerResponse::class.java)
+            .returnResult()
+            .responseBody!!
     }
 }

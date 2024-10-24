@@ -1,197 +1,188 @@
-package com.modsen.taxi.passengerservice;
+package com.modsen.taxi.passengerservice
 
-import com.modsen.taxi.passengerservice.domain.Passenger;
-import com.modsen.taxi.passengerservice.dto.PassengerRequest;
-import com.modsen.taxi.passengerservice.dto.PassengerResponse;
-import com.modsen.taxi.passengerservice.error.exception.DuplicateResourceException;
-import com.modsen.taxi.passengerservice.error.exception.ResourceNotFoundException;
-import com.modsen.taxi.passengerservice.mapper.PassengerMapper;
-import com.modsen.taxi.passengerservice.repository.PassengerRepository;
-import com.modsen.taxi.passengerservice.service.impl.PassengerServiceImpl;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.*;
-import reactor.core.Disposable;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Scheduler;
-import reactor.test.StepVerifier;
+import com.modsen.taxi.passengerservice.domain.Passenger
+import com.modsen.taxi.passengerservice.dto.PassengerRequest
+import com.modsen.taxi.passengerservice.dto.PassengerResponse
+import com.modsen.taxi.passengerservice.error.exception.DuplicateResourceException
+import com.modsen.taxi.passengerservice.error.exception.ResourceNotFoundException
+import com.modsen.taxi.passengerservice.repository.PassengerRepository
+import com.modsen.taxi.passengerservice.service.impl.PassengerServiceImpl
+import com.ninjasquad.springmockk.MockkBean
+import io.mockk.*
+import org.hibernate.internal.util.collections.CollectionHelper.listOf
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.data.domain.*
+import reactor.core.Disposable
+import reactor.core.publisher.Mono
+import reactor.core.scheduler.Scheduler
+import reactor.test.StepVerifier
+import java.util.*
 
-import java.util.List;
-import java.util.Optional;
+@SpringBootTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class PassengerServiceImplTest {
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.*;
+    @MockkBean
+    private lateinit var passengerRepository: PassengerRepository
 
-@ExtendWith(MockitoExtension.class)
-public class PassengerServiceImplTest {
+    @MockkBean
+    private lateinit var jdbcScheduler: Scheduler
 
-    @Mock
-    private PassengerRepository passengerRepository;
-
-    @Mock
-    private PassengerMapper passengerMapper;
-
-    @Mock
-    private Scheduler jdbcScheduler;
-
-    @InjectMocks
-    private PassengerServiceImpl passengerService;
-
-    private PassengerRequest passengerRequest;
-    private Passenger passenger1;
-    private Passenger passenger2;
-    private PassengerResponse passengerResponse1;
-    private PassengerResponse passengerResponse2;
-    private Pageable pageable;
+    @Autowired
+    private lateinit var passengerService: PassengerServiceImpl
 
     @BeforeEach
-    public void setUp() {
-        when(jdbcScheduler.schedule(any())).thenAnswer(invocation -> {
-            Runnable runnable = invocation.getArgument(0);
-            runnable.run();
-            return mock(Disposable.class);
-        });
-
-        passengerRequest = new PassengerRequest("John", "Doe", "john.doe@example.com", "123123123123");
-        passenger1 = new Passenger(1L, "John", "Doe", "john.doe@example.com", "123123123123", false);
-        passenger2 = new Passenger(2L, "Jane", "Doe", "jane.doe@example.com", "456456456456", false);
-        passengerResponse1 = new PassengerResponse(1L, "John", "Doe", "john.doe@example.com", "123123123123");
-        passengerResponse2 = new PassengerResponse(2L, "Jane", "Doe", "jane.doe@example.com", "456456456456");
-        pageable = PageRequest.of(0, 2);
+    fun setUp() {
+        every { jdbcScheduler.schedule(any()) } answers {
+            val runnable = it.invocation.args[0] as Runnable
+            runnable.run()
+            mockk<Disposable> {
+                every { dispose() } just Runs
+            }
+        }
     }
 
     @Test
-    void createPassenger_ShouldReturnPassengerResponse_WhenPassengerCreatedSuccessfully() {
-        when(passengerRepository.existsByEmail(anyString())).thenReturn(false);
-        when(passengerMapper.toPassenger(passengerRequest)).thenReturn(passenger1);
-        when(passengerRepository.save(passenger1)).thenReturn(passenger1);
-        when(passengerMapper.toPassengerResponse(passenger1)).thenReturn(passengerResponse1);
+    fun `createPassenger should return PassengerResponse when passenger is created successfully`() {
+        val passengerRequest = PassengerRequest("John", "Doe", "john.doe@example.com", "123123123123")
+        val passenger1 = Passenger(1L, "John", "Doe", "john.doe@example.com", "123123123123", false)
 
-        Mono<PassengerResponse> result = passengerService.createPassenger(passengerRequest);
+        every { passengerRepository.existsByEmail(any()) } returns false
+        every { passengerRepository.save(any()) } returns passenger1
+
+        val result: Mono<PassengerResponse> = passengerService.createPassenger(passengerRequest)
 
         StepVerifier.create(result)
-                .expectNextMatches(response -> response.email().equals("john.doe@example.com"))
-                .verifyComplete();
+            .expectNextMatches { it.email == "john.doe@example.com" }
+            .verifyComplete()
 
-        verify(passengerRepository).existsByEmail(anyString());
-        verify(passengerRepository).save(passenger1);
+        verify { passengerRepository.existsByEmail(any()) }
+        verify { passengerRepository.save(any()) }
     }
 
     @Test
-    void createPassenger_ShouldThrowDuplicateResourceException_WhenPassengerAlreadyExists() {
-        when(passengerRepository.existsByEmail(anyString())).thenReturn(true);
+    fun `createPassenger should throw DuplicateResourceException when passenger already exists`() {
+        val passengerRequest = PassengerRequest("John", "Doe", "john.doe@example.com", "123123123123")
 
-        Mono<PassengerResponse> result = passengerService.createPassenger(passengerRequest);
+        every { passengerRepository.existsByEmail(any()) } returns true
+
+        val result: Mono<PassengerResponse> = passengerService.createPassenger(passengerRequest)
 
         StepVerifier.create(result)
-                .expectError(DuplicateResourceException.class)
-                .verify();
-
-        verify(passengerRepository).existsByEmail(anyString());
-        verify(passengerRepository, never()).save(any(Passenger.class));
+            .expectError(DuplicateResourceException::class.java)
+            .verify()
+        verify { passengerRepository.existsByEmail(any()) }
+        verify(exactly = 0) { passengerRepository.save(any<Passenger>()) }
     }
 
     @Test
-    void getPassengerById_ShouldReturnPassengerResponse_WhenPassengerExists() {
-        when(passengerRepository.findByIdAndIsDeletedFalse(anyLong())).thenReturn(Optional.of(passenger1));
-        when(passengerMapper.toPassengerResponse(passenger1)).thenReturn(passengerResponse1);
+    fun `getPassengerById should return PassengerResponse when passenger exists`() {
+        val passenger1 = Passenger(1L, "John", "Doe", "john.doe@example.com", "123123123123", false)
 
-        Mono<PassengerResponse> result = passengerService.getPassengerById(1L);
+        every { passengerRepository.findByIdAndIsDeletedFalse(any()) } returns Optional.of(passenger1)
+
+        val result: Mono<PassengerResponse> = passengerService.getPassengerById(1L)
 
         StepVerifier.create(result)
-                .expectNextMatches(response -> response.email().equals("john.doe@example.com"))
-                .verifyComplete();
+            .expectNextMatches { it.email == "john.doe@example.com" }
+            .verifyComplete()
 
-        verify(passengerRepository).findByIdAndIsDeletedFalse(anyLong());
+        verify { passengerRepository.findByIdAndIsDeletedFalse(any()) }
     }
 
     @Test
-    void getPassengerById_ShouldThrowResourceNotFoundException_WhenPassengerNotFound() {
-        when(passengerRepository.findByIdAndIsDeletedFalse(anyLong())).thenReturn(Optional.empty());
+    fun `getPassengerById should throw ResourceNotFoundException when passenger not found`() {
+        every { passengerRepository.findByIdAndIsDeletedFalse(any()) } returns Optional.empty()
 
-        Mono<PassengerResponse> result = passengerService.getPassengerById(1L);
+        val result: Mono<PassengerResponse> = passengerService.getPassengerById(1L)
 
         StepVerifier.create(result)
-                .expectError(ResourceNotFoundException.class)
-                .verify();
+            .expectError(ResourceNotFoundException::class.java)
+            .verify()
 
-        verify(passengerRepository).findByIdAndIsDeletedFalse(anyLong());
+        verify { passengerRepository.findByIdAndIsDeletedFalse(any()) }
     }
 
     @Test
-    void deletePassenger_ShouldMarkPassengerAsDeleted_WhenPassengerExists() {
-        when(passengerRepository.findByIdAndIsDeletedFalse(anyLong())).thenReturn(Optional.of(passenger1));
+    fun `deletePassenger should mark passenger as deleted when passenger exists`() {
+        val passenger1 = Passenger(1L, "John", "Doe", "john.doe@example.com", "123123123123", false)
 
-        Mono<Void> result = passengerService.deletePassenger(1L);
+        every { passengerRepository.findByIdAndIsDeletedFalse(any()) } returns Optional.of(passenger1)
+        every { passengerRepository.save(any()) } returns passenger1
+
+        val result: Mono<Void> = passengerService.deletePassenger(1L)
 
         StepVerifier.create(result)
-                .verifyComplete();
+            .verifyComplete()
 
-        verify(passengerRepository).findByIdAndIsDeletedFalse(anyLong());
-        assert passenger1.getIsDeleted();
-        verify(passengerRepository).save(passenger1);
+        assert(passenger1.isDeleted)
+        verify { passengerRepository.findByIdAndIsDeletedFalse(any()) }
+        verify { passengerRepository.save(passenger1) }
     }
 
     @Test
-    void deletePassenger_ShouldThrowResourceNotFoundException_WhenPassengerDoesNotExist() {
-        when(passengerRepository.findByIdAndIsDeletedFalse(anyLong())).thenReturn(Optional.empty());
+    fun `deletePassenger should throw ResourceNotFoundException when passenger does not exist`() {
+        every { passengerRepository.findByIdAndIsDeletedFalse(any()) } returns Optional.empty()
 
-        Mono<Void> result = passengerService.deletePassenger(1L);
+        val result: Mono<Void> = passengerService.deletePassenger(1L)
 
         StepVerifier.create(result)
-                .expectError(ResourceNotFoundException.class)
-                .verify();
+            .expectError(ResourceNotFoundException::class.java)
+            .verify()
 
-        verify(passengerRepository, never()).save(any(Passenger.class));
+        verify { passengerRepository.findByIdAndIsDeletedFalse(any()) }
+        verify(exactly = 0) { passengerRepository.save(any<Passenger>()) }
+    }
+
+
+    @Test
+    fun `getAllPassengers should return paged passengers when passengers exist`() {
+        val passenger1 = Passenger(1L, "John", "Doe", "john.doe@example.com", "123123123123", false)
+        val passenger2 = Passenger(2L, "Jane", "Doe", "jane.doe@example.com", "456456456456", false)
+        val pageable = PageRequest.of(0, 2)
+        val passengerPage = PageImpl(listOf(passenger1, passenger2), pageable, 2)
+        every { passengerRepository.findAll(any<Example<Passenger>>(), any<Pageable>()) } returns passengerPage
+
+        val result: Mono<Page<PassengerResponse>> = passengerService.getAllPassengers(pageable, null, null, null, true)
+
+        StepVerifier.create(result)
+            .expectNextMatches { page ->
+                assertEquals(2, page.size)
+                assertEquals(2, page.totalElements)
+                val responses = page.content
+                responses.size == 2 &&
+                        responses[0].email == "john.doe@example.com" &&
+                        responses[1].email == "jane.doe@example.com"
+            }
+            .verifyComplete()
+
+        verify { passengerRepository.findAll(any<Example<Passenger>>(), any<Pageable>()) }
     }
 
     @Test
-    void getAllPassengers_ShouldReturnPagedPassengers_WhenPassengersExist() {
-        Page<Passenger> passengerPage = new PageImpl<>(List.of(passenger1, passenger2), pageable, 2);
-        when(passengerRepository.findAll(any(Example.class), any(Pageable.class))).thenReturn(passengerPage);
-        when(passengerMapper.toPassengerResponse(passenger1)).thenReturn(passengerResponse1);
-        when(passengerMapper.toPassengerResponse(passenger2)).thenReturn(passengerResponse2);
+    fun `getAllPassengers should return filtered passengers when filters are applied`() {
+        val passenger1 = Passenger(1L, "John", "Doe", "john.doe@example.com", "123123123123", false)
+        val pageable = PageRequest.of(0, 2)
+        val passengerPage = PageImpl(listOf(passenger1), pageable, 1)
 
-        Mono<Page<PassengerResponse>> result = passengerService.getAllPassengers(pageable, null, null, null, true);
+        every { passengerRepository.findAll(any<Example<Passenger>>(), any<Pageable>()) } returns passengerPage
 
-        StepVerifier.create(result)
-                .expectNextMatches(page -> {
-                    assertEquals(2, page.getSize());
-                    assertEquals(2, page.getTotalElements());
-                    List<PassengerResponse> responses = page.getContent();
-                    return responses.size() == 2 &&
-                            responses.get(0).equals(passengerResponse1) &&
-                            responses.get(1).equals(passengerResponse2);
-                })
-                .verifyComplete();
-
-        verify(passengerRepository).findAll(any(Example.class), eq(pageable));
-    }
-
-    @Test
-    void getAllPassengers_ShouldReturnFilteredPassengers_WhenFiltersAreApplied() {
-        Page<Passenger> passengerPage = new PageImpl<>(List.of(passenger1), pageable, 1);
-        when(passengerRepository.findAll(any(Example.class), eq(pageable))).thenReturn(passengerPage);
-        when(passengerMapper.toPassengerResponse(passenger1)).thenReturn(passengerResponse1);
-
-        Mono<Page<PassengerResponse>> result = passengerService.getAllPassengers(pageable, "John", "", "", true);
+        val result: Mono<Page<PassengerResponse>> = passengerService.getAllPassengers(pageable, "John", "", "", true)
 
         StepVerifier.create(result)
-                .expectNextMatches(page -> {
-                    List<PassengerResponse> passengers = page.getContent();
-                    return passengers.size() == 1 &&
-                            passengers.get(0).firstName().equals("John") &&
-                            passengers.get(0).lastName().equals("Doe");
-                })
-                .verifyComplete();
+            .expectNextMatches { page ->
+                val passengers = page.content
+                passengers.size == 1 &&
+                        passengers[0].firstName == "John" &&
+                        passengers[0].lastName == "Doe"
+            }
+            .verifyComplete()
 
-        verify(passengerRepository).findAll(any(Example.class), eq(pageable));
-        verify(passengerMapper).toPassengerResponse(passenger1);
+        verify { passengerRepository.findAll(any<Example<Passenger>>(), any<Pageable>()) }
     }
 }

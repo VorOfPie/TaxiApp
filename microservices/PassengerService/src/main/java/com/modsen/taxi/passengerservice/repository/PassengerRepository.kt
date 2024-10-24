@@ -5,10 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import java.util.*
 
 interface PassengerRepository : JpaRepository<Passenger?, Long?> {
-    fun findByIdAndIsDeletedFalse(id: Long?): Optional<Passenger?>?
-    fun findAllByIsDeletedFalse(): List<Passenger?>?
-    fun existsByEmail(email: String?): Boolean
-    fun findByEmailAndIsDeletedFalse(email: String?): Optional<Passenger?>?
-    fun deletePassengerByEmail(email: String?)
-    fun deleteByEmail(email: String?)
+    fun findByIdAndIsDeletedFalse(id: Long?): Optional<Passenger>
+    fun existsByEmail(email: String): Boolean
+    fun deleteByEmail(email: String)
 }
