@@ -1,6 +1,5 @@
 package com.modsen.taxi.tripservice;
 
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.json.AutoConfigureJsonTesters;
@@ -12,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -26,16 +26,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Testcontainers
 @AutoConfigureJsonTesters
-@AutoConfigureStubRunner(ids = {"com.modsen.taxi:PassengerService:+:stubs:7001",
-                "com.modsen.taxi:DriverService:+:stubs:7002"},
-        stubsMode = StubRunnerProperties.StubsMode.LOCAL)
+@AutoConfigureStubRunner(
+        ids = {
+                "com.modsen.taxi:PassengerService:+:stubs:7001",
+                "com.modsen.taxi:DriverService:+:stubs:7002"
+        },
+        stubsMode = StubRunnerProperties.StubsMode.LOCAL
+)
 public class BaseContractTest {
 
     @Container
-    private static final PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>(DockerImageName.parse("postgres:16"));
+    private static final PostgreSQLContainer<?> postgreSQLContainer =
+            new PostgreSQLContainer<>(DockerImageName.parse("postgres:16"));
+
     @Autowired
     private MockMvc mockMvc;
-
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
@@ -44,9 +49,9 @@ public class BaseContractTest {
         registry.add("spring.datasource.password", postgreSQLContainer::getPassword);
     }
 
-
     @Test
     public void testCreateTrip_success() throws Exception {
+        // given: valid trip request JSON
         String tripRequestJson = """
                 {
                     "driverId": 1,
@@ -59,10 +64,13 @@ public class BaseContractTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/v1/trips")
+        // when: perform the request to create a trip
+        ResultActions response = mockMvc.perform(post("/api/v1/trips")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(tripRequestJson))
-                .andExpect(status().isCreated())
+                .content(tripRequestJson));
+
+        // then: verify that the trip is created successfully with the expected values
+        response.andExpect(status().isCreated())
                 .andExpect(jsonPath("$.driverId", is(1)))
                 .andExpect(jsonPath("$.passengerId", is(1)))
                 .andExpect(jsonPath("$.originAddress", is("123 Main St")))
@@ -73,6 +81,7 @@ public class BaseContractTest {
 
     @Test
     public void testCreateTrip_driverNotFound() throws Exception {
+        // given: trip request JSON with a non-existent driver ID
         String tripRequestJson = """
                 {
                     "driverId": 999,
@@ -85,15 +94,19 @@ public class BaseContractTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/v1/trips")
+        // when: perform the request to create a trip
+        ResultActions response = mockMvc.perform(post("/api/v1/trips")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(tripRequestJson))
-                .andExpect(status().isNotFound())
+                .content(tripRequestJson));
+
+        // then: verify that the driver is not found
+        response.andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Driver with id 999 not found")));
     }
 
     @Test
     public void testCreateTrip_passengerNotFound() throws Exception {
+        // given: trip request JSON with a non-existent passenger ID
         String tripRequestJson = """
                 {
                     "driverId": 1,
@@ -106,10 +119,13 @@ public class BaseContractTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/v1/trips")
+        // when: perform the request to create a trip
+        ResultActions response = mockMvc.perform(post("/api/v1/trips")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(tripRequestJson))
-                .andExpect(status().isNotFound())
+                .content(tripRequestJson));
+
+        // then: verify that the passenger is not found
+        response.andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Passenger with id 999 not found")));
     }
 }

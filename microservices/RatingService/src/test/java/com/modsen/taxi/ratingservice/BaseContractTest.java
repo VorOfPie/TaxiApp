@@ -12,6 +12,7 @@ import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -27,13 +28,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Testcontainers
 @AutoConfigureJsonTesters
 @EmbeddedKafka(partitions = 1, topics = "rating-topic")
-@AutoConfigureStubRunner(ids = {"com.modsen.taxi:PassengerService:+:stubs:7001",
-        "com.modsen.taxi:DriverService:+:stubs:7002"},
-        stubsMode = StubRunnerProperties.StubsMode.LOCAL)
+@AutoConfigureStubRunner(ids = {
+        "com.modsen.taxi:PassengerService:+:stubs:7001",
+        "com.modsen.taxi:DriverService:+:stubs:7002"
+}, stubsMode = StubRunnerProperties.StubsMode.LOCAL)
 public class BaseContractTest {
 
     @Container
-    private static final PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>(DockerImageName.parse("postgres:16"));
+    private static final PostgreSQLContainer<?> postgreSQLContainer =
+            new PostgreSQLContainer<>(DockerImageName.parse("postgres:16"));
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -46,6 +50,7 @@ public class BaseContractTest {
 
     @Test
     public void testCreateRating_success() throws Exception {
+        // given: input data for creating a rating
         String ratingRequestJson = """
                 {
                     "driverId": 1,
@@ -55,10 +60,13 @@ public class BaseContractTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/v1/rating")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(ratingRequestJson))
-                .andExpect(status().isCreated())
+        // when: perform the request to create a rating
+        ResultActions response = mockMvc.perform(post("/api/v1/rating")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(ratingRequestJson));
+
+        // then: verify that the response status and data are correct
+        response.andExpect(status().isCreated())
                 .andExpect(jsonPath("$.driverId", is(1)))
                 .andExpect(jsonPath("$.passengerId", is(1)))
                 .andExpect(jsonPath("$.score", is(4.5)))
@@ -67,6 +75,7 @@ public class BaseContractTest {
 
     @Test
     public void testCreateRating_driverNotFound() throws Exception {
+        // given: rating request JSON with a non-existent driver ID
         String ratingRequestJson = """
                 {
                     "driverId": 999,
@@ -76,15 +85,19 @@ public class BaseContractTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/v1/rating")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(ratingRequestJson))
-                .andExpect(status().isNotFound())
+        // when: perform the request to create a rating
+        ResultActions response = mockMvc.perform(post("/api/v1/rating")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(ratingRequestJson));
+
+        // then: verify that the driver is not found
+        response.andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Driver with id 999 not found")));
     }
 
     @Test
     public void testCreateRating_passengerNotFound() throws Exception {
+        // given: rating request JSON with a non-existent passenger ID
         String ratingRequestJson = """
                 {
                     "driverId": 1,
@@ -94,11 +107,13 @@ public class BaseContractTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/v1/rating")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(ratingRequestJson))
-                .andExpect(status().isNotFound())
+        // when: perform the request to create a rating
+        ResultActions response = mockMvc.perform(post("/api/v1/rating")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(ratingRequestJson));
+
+        // then: verify that the passenger is not found
+        response.andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Passenger with id 999 not found")));
     }
-
 }
