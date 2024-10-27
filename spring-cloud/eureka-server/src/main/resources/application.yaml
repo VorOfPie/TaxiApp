@@ -9,3 +9,8 @@ eureka:
     fetchRegistry: false
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
+
+
+  server:
+    waitTimeInMsWhenSyncEmpty: 0
+    response-cache-update-interval-ms: 5000
