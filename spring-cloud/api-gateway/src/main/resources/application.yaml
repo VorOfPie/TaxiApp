@@ -1,0 +1,36 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: passenger-service
+          uri: lb://passenger-service
+          predicates:
+            - Path=/api/passengers/**
+        - id: driver-service
+          uri: lb://driver-service
+          predicates:
+            - Path=/api/drivers/**
+        - id: trip-service
+          uri: lb://trip-service
+          predicates:
+            - Path=/api/trips/**
+        - id: rating-service
+          uri: lb://rating-service
+          predicates:
+            - Path=/api/rating/**
+    discovery:
+      enabled: true
+      locator:
+        enabled: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
