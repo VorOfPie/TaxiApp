@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/passenger_db
+    url: jdbc:postgresql://localhost:5432/rating_db
     username: username
     password: password
     driver-class-name: org.postgresql.Driver
@@ -16,13 +16,63 @@ spring:
   liquibase:
     change-log: db/changelog/main-changelog.xml
     enabled: true
-server:
-  port: 7001
 
-passenger:
+  kafka:
+    bootstrap-servers: localhost:29092
+    consumer:
+      group-id: rating-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: '*'
+        spring.json.value.default.type: com.modsen.taxi.ratingservice.dto.RatingRequest
+
+  actuator:
+    endpoints:
+      web:
+        exposure:
+          include: health, info, prometheus
+    endpoint:
+      prometheus:
+        enabled: true
+    metrics:
+      export:
+        prometheus:
+          enabled: true
+    health:
+      show-details: always
+
+server:
+  port: 7004
+
+ratingservice:
+  urls:
+    passenger: http://localhost:7001/api/v1/passengers/
+    driver: http://localhost:7002/api/v1/drivers/
+
   scheduler:
-    threadPoolSize: 10
+    threadPoolSize: 15
     taskQueueSize: 100
+
 ---
-spring.config.activate.on-profile: docker
+spring:
+  config:
+    activate:
+      on-profile: docker
+  kafka:
+    bootstrap-servers: kafka:9092
 server.port: 8080
+ratingservice:
+  urls:
+    passenger: http://passenger:8080/api/v1/passengers/
+    driver: http://driver:8080/api/v1/drivers/
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name},%X{traceId:-},%X{spanId:-}]"
+
+management:
+  tracing:
+    sampling:
+      probability: 1
+    enabled: true

@@ -1,0 +1,44 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'passenger-service'
+    static_configs:
+      - targets: ['passenger:8080']
+
+  - job_name: 'driver-service'
+    static_configs:
+      - targets: ['driver:8080']
+
+  - job_name: 'trip-service'
+    static_configs:
+      - targets: ['trip:8080']
+
+  - job_name: 'rating-service'
+    static_configs:
+      - targets: ['rating:8080']
+
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-sql-bsn:5432']
+
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['kafka:9092']
+
+  - job_name: 'zookeeper'
+    static_configs:
+      - targets: ['zookeeper:2181']
+
+  - job_name: 'elasticsearch'
+    static_configs:
+      - targets: ['elasticsearch:9200']
+
+  - job_name: 'logstash'
+    static_configs:
+      - targets: ['logstash:5001']

@@ -12,6 +12,7 @@ import com.modsen.taxi.driversrvice.repository.CarRepository;
 import com.modsen.taxi.driversrvice.repository.DriverRepository;
 import com.modsen.taxi.driversrvice.service.DriverService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
@@ -27,6 +28,7 @@ import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DriverServiceImpl implements DriverService {
 
     private final DriverRepository driverRepository;
@@ -36,6 +38,7 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public Mono<DriverResponse> getDriverById(Long id) {
+        log.info("Fetching driver with id: {}", id);
         return Mono.fromCallable(() -> driverRepository.findByIdAndIsDeletedFalse(id)
                         .orElseThrow(() -> new ResourceNotFoundException("Driver with id " + id + " not found")))
                 .subscribeOn(jdbcScheduler)
@@ -44,9 +47,12 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public Mono<DriverResponse> createDriver(DriverRequest driverRequest) {
+        log.info("Creating driver with phone number: {}", driverRequest.phone());
         return Mono.fromCallable(() -> {
-            if (driverRepository.existsByPhone(driverRequest.phone()))
+            if (driverRepository.existsByPhone(driverRequest.phone())) {
+                log.error("Duplicate driver found with phone number: {}", driverRequest.phone());
                 throw new DuplicateResourceException("Driver with phone number " + driverRequest.phone() + " already exists.");
+            }
             Driver driver = driverMapper.toDriver(driverRequest);
             driver.setIsDeleted(false);
             validateNewCars(driverRequest.cars());
@@ -58,8 +64,6 @@ public class DriverServiceImpl implements DriverService {
             Driver finalSavedDriver = driverRepository.save(savedDriver);
 
             return driverMapper.toDriverResponse(finalSavedDriver);
-
-
         }).subscribeOn(jdbcScheduler);
     }
 
@@ -67,11 +71,11 @@ public class DriverServiceImpl implements DriverService {
         List<Car> cars = driverMapper.carRequestsToCars(carRequests);
         for (Car newCar : cars) {
             if (newCar.getId() == null && carRepository.existsByLicensePlate(newCar.getLicensePlate())) {
+                log.error("Duplicate car found with license plate: {}", newCar.getLicensePlate());
                 throw new DuplicateResourceException("Car with license plate " + newCar.getLicensePlate() + " already exists.");
             }
         }
     }
-
 
     private List<Car> associateCarsWithDriver(List<CarRequest> carRequests, Driver savedDriver) {
         List<Long> carIds = carRequests.stream()
@@ -94,10 +98,10 @@ public class DriverServiceImpl implements DriverService {
                 .collect(Collectors.toList());
     }
 
-
     @Transactional
     @Override
     public Mono<DriverResponse> updateDriver(Long id, DriverRequest driverRequest) {
+        log.info("Updating driver with id: {}", id);
         return Mono.fromCallable(() -> {
             Driver driver = driverRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Driver with id " + id + " not found"));
@@ -113,9 +117,9 @@ public class DriverServiceImpl implements DriverService {
         }).subscribeOn(jdbcScheduler);
     }
 
-
     @Override
     public Mono<Void> deleteDriver(Long id) {
+        log.info("Deleting driver with id: {}", id);
         return Mono.fromRunnable(() -> {
                     Driver driver = driverRepository.findById(id)
                             .orElseThrow(() -> new ResourceNotFoundException("Driver with id " + id + " not found"));
@@ -128,6 +132,7 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public Mono<Page<DriverResponse>> getAllDrivers(Pageable pageable, String firstName, String lastName, String phone, boolean isActive) {
+        log.info("Fetching all drivers with filters - First Name: {}, Last Name: {}, Phone: {}, Is Active: {}", firstName, lastName, phone, isActive);
         return Mono.fromCallable(() -> {
                     Driver driverProbe = Driver.builder()
                             .firstName(firstName)

@@ -9,6 +9,7 @@ import com.modsen.taxi.driversrvice.mapper.CarMapper;
 import com.modsen.taxi.driversrvice.repository.CarRepository;
 import com.modsen.taxi.driversrvice.service.CarService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
@@ -19,6 +20,7 @@ import reactor.core.scheduler.Scheduler;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CarServiceImpl implements CarService {
 
     private final CarRepository carRepository;
@@ -27,6 +29,7 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public Mono<CarResponse> getCarById(Long id) {
+        log.info("Fetching car with id: {}", id);
         return Mono.fromCallable(() -> carRepository.findByIdAndIsDeletedFalse(id)
                         .orElseThrow(() -> new ResourceNotFoundException("Car with id: " + id + " not found")))
                 .subscribeOn(jdbcScheduler)
@@ -35,9 +38,11 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public Mono<CarResponse> createCar(CreateCarRequest createCarRequest) {
+        log.info("Creating car with license plate: {}", createCarRequest.licensePlate());
         return Mono.fromCallable(() -> {
                     boolean exists = carRepository.existsByLicensePlate(createCarRequest.licensePlate());
                     if (exists) {
+                        log.error("Duplicate car found with license plate: {}", createCarRequest.licensePlate());
                         throw new DuplicateResourceException("Car with license plate " + createCarRequest.licensePlate() + " already exists.");
                     }
                     Car car = carMapper.toCar(createCarRequest);
@@ -50,6 +55,7 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public Mono<CarResponse> updateCar(Long id, CreateCarRequest createCarRequest) {
+        log.info("Updating car with id: {}", id);
         return Mono.fromCallable(() -> {
                     Car car = carRepository.findByIdAndIsDeletedFalse(id)
                             .orElseThrow(() -> new ResourceNotFoundException("Car with id: " + id + " not found"));
@@ -62,6 +68,7 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public Mono<Void> deleteCar(Long id) {
+        log.info("Deleting car with id: {}", id);
         return Mono.fromRunnable(() -> {
                     Car car = carRepository.findByIdAndIsDeletedFalse(id)
                             .orElseThrow(() -> new ResourceNotFoundException("Car with id: " + id + " not found"));
@@ -74,6 +81,7 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public Mono<Page<CarResponse>> getAllCars(Pageable pageable, String brand, String color, String licensePlate, boolean isActive) {
+        log.info("Fetching all cars with filters - Brand: {}, Color: {}, License Plate: {}, Is Active: {}", brand, color, licensePlate, isActive);
         return Mono.fromCallable(() -> {
                     Car carProbe = Car.builder()
                             .brand(brand)

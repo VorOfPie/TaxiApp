@@ -1,3 +1,5 @@
+# application.yml
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/driver_db
@@ -16,6 +18,22 @@ spring:
   liquibase:
     change-log: db/changelog/main-changelog.xml
     enabled: true
+
+  actuator:
+    endpoints:
+      web:
+        exposure:
+          include: health, info, prometheus
+    endpoint:
+      prometheus:
+        enabled: true
+    metrics:
+      export:
+        prometheus:
+          enabled: true
+    health:
+      show-details: always
+
 server:
   port: 7002
 
@@ -26,4 +44,61 @@ driver:
 
 ---
 spring.config.activate.on-profile: docker
-server.port: 8080
+server:
+  port: 8080
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name},%X{traceId:-},%X{spanId:-}]"
+
+management:
+  tracing:
+    sampling:
+      probability: 1
+    enabled: true
+
+---
+# Passenger Service Configuration
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/passenger_db
+    username: username
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+
+  liquibase:
+    change-log: db/changelog/main-changelog.xml
+    enabled: true
+
+  actuator:
+    endpoints:
+      web:
+        exposure:
+          include: health, info, prometheus
+    endpoint:
+      prometheus:
+        enabled: true
+    metrics:
+      export:
+        prometheus:
+          enabled: true
+    health:
+      show-details: always
+
+server:
+  port: 7001
+
+passenger:
+  scheduler:
+    threadPoolSize: 10
+    taskQueueSize: 100
+
+---
+spring.config.activate.on-profile: docker
+server:
+  port: 8080

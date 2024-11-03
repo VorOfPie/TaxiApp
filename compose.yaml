@@ -4,6 +4,7 @@ services:
     build: microservices/PassengerService
     depends_on:
       - postgres
+      - logstash
     ports:
       - "8081:8080"
     environment:
@@ -11,14 +12,18 @@ services:
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - taxi-network
     deploy:
       resources:
         limits:
           memory: 256M
+
   driver:
     build: microservices/DriverService
     depends_on:
       - postgres
+      - logstash
     ports:
       - "8082:8080"
     environment:
@@ -26,6 +31,8 @@ services:
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - taxi-network
     deploy:
       resources:
         limits:
@@ -36,6 +43,7 @@ services:
     depends_on:
       - postgres
       - kafka
+      - logstash
     ports:
       - "8083:8080"
     environment:
@@ -43,17 +51,19 @@ services:
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - taxi-network
     deploy:
       resources:
         limits:
           memory: 256M
-
 
   rating:
     build: microservices/RatingService
     depends_on:
       - postgres
       - kafka
+      - logstash
     ports:
       - "8084:8080"
     environment:
@@ -61,6 +71,8 @@ services:
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - taxi-network
     deploy:
       resources:
         limits:
@@ -79,6 +91,8 @@ services:
     ports:
       - ${POSTGRES_LOCAL_PORT}:${POSTGRES_DOCKER_PORT}
     restart: unless-stopped
+    networks:
+      - taxi-network
     deploy:
       resources:
         limits:
@@ -91,6 +105,8 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - 22181:2181
+    networks:
+      - taxi-network
     deploy:
       resources:
         limits:
@@ -110,14 +126,86 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - taxi-network
     deploy:
       resources:
         limits:
           memory: 256M
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - taxi-network
 
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    networks:
+      - taxi-network
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+      - xpack.ml.enabled=false
+    ports:
+      - "9200:9200"
+    restart: always
+    networks:
+      - taxi-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.15.3
+    container_name: logstash
+    depends_on:
+      - elasticsearch
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+    ports:
+      - "5001:5001"
+    networks:
+      - taxi-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.3
+    container_name: kibana
+    depends_on:
+      - elasticsearch
+    environment:
+      ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
+    ports:
+      - "5601:5601"
+    networks:
+      - taxi-network
+
+networks:
+  taxi-network:
+    driver: bridge
 
 volumes:
   postgres:
+    driver: local
+  esdata:
     driver: local
