@@ -3,6 +3,8 @@ package com.modsen.taxi.passengerservice.service.impl;
 import com.modsen.taxi.passengerservice.domain.Passenger;
 import com.modsen.taxi.passengerservice.dto.PassengerRequest;
 import com.modsen.taxi.passengerservice.dto.PassengerResponse;
+import com.modsen.taxi.passengerservice.dto.PassengerUpdateRequest;
+import com.modsen.taxi.passengerservice.error.exception.AccessDeniedException;
 import com.modsen.taxi.passengerservice.error.exception.DuplicateResourceException;
 import com.modsen.taxi.passengerservice.error.exception.ResourceNotFoundException;
 import com.modsen.taxi.passengerservice.mapper.PassengerMapper;
@@ -26,6 +28,22 @@ public class PassengerServiceImpl implements PassengerService {
     private final Scheduler jdbcScheduler;
 
     @Override
+    public Mono<PassengerResponse> getPassengerById(Long id, String principalEmail, boolean isAdmin) {
+        return Mono.fromCallable(() -> {
+                    Passenger passenger = passengerRepository.findByIdAndIsDeletedFalse(id)
+                            .orElseThrow(() -> new ResourceNotFoundException("Passenger with id " + id + " not found."));
+
+                    if (!isAdmin && !passenger.getEmail().equals(principalEmail)) {
+                        throw new AccessDeniedException("You do not have permission to access this passenger's information.");
+                    }
+
+                    return passenger;
+                })
+                .subscribeOn(jdbcScheduler)
+                .map(passengerMapper::toPassengerResponse);
+    }
+
+    @Override
     public Mono<PassengerResponse> createPassenger(PassengerRequest passengerRequest) {
         return Mono.fromCallable(() -> {
                     boolean exists = passengerRepository.existsByEmail(passengerRequest.email());
@@ -41,23 +59,50 @@ public class PassengerServiceImpl implements PassengerService {
     }
 
     @Override
-    public Mono<PassengerResponse> updatePassenger(Long id, PassengerRequest passengerRequest) {
+    public Mono<PassengerResponse> updatePassenger(Long id, PassengerUpdateRequest passengerUpdateRequest, String principalEmail, boolean isAdmin) {
         return Mono.fromCallable(() -> {
                     Passenger passenger = passengerRepository.findByIdAndIsDeletedFalse(id)
                             .orElseThrow(() -> new ResourceNotFoundException("Passenger with id " + id + " not found."));
-                    passengerMapper.updatePassengerFromRequest(passengerRequest, passenger);
+
+                    if (!isAdmin && !passenger.getEmail().equals(principalEmail)) {
+                        throw new AccessDeniedException("You do not have permission to update this passenger's information.");
+                    }
+
+                    if (passengerUpdateRequest.firstName() != null) {
+                        passenger.setFirstName(passengerUpdateRequest.firstName());
+                    }
+                    if (passengerUpdateRequest.lastName() != null) {
+                        passenger.setLastName(passengerUpdateRequest.lastName());
+                    }
+                    if (passengerUpdateRequest.phone() != null) {
+                        passenger.setPhone(passengerUpdateRequest.phone());
+                    }
+                    if (passengerUpdateRequest.email() != null) {
+                        passenger.setEmail(passengerUpdateRequest.email());
+                    }
+
                     return passengerRepository.save(passenger);
                 })
                 .subscribeOn(jdbcScheduler)
                 .map(passengerMapper::toPassengerResponse);
     }
 
+
     @Override
-    public Mono<PassengerResponse> getPassengerById(Long id) {
-        return Mono.fromCallable(() -> passengerRepository.findByIdAndIsDeletedFalse(id)
-                        .orElseThrow(() -> new ResourceNotFoundException("Passenger with id " + id + " not found.")))
+    public Mono<Void> deletePassenger(Long id, String principalEmail, boolean isAdmin) {
+        return Mono.fromRunnable(() -> {
+                    Passenger passenger = passengerRepository.findByIdAndIsDeletedFalse(id)
+                            .orElseThrow(() -> new ResourceNotFoundException("Passenger with id " + id + " not found."));
+
+                    if (!isAdmin && !passenger.getEmail().equals(principalEmail)) {
+                        throw new AccessDeniedException("You do not have permission to delete this passenger.");
+                    }
+
+                    passenger.setIsDeleted(true);
+                    passengerRepository.save(passenger);
+                })
                 .subscribeOn(jdbcScheduler)
-                .map(passengerMapper::toPassengerResponse);
+                .then();
     }
 
     @Override
@@ -83,16 +128,5 @@ public class PassengerServiceImpl implements PassengerService {
                 })
                 .subscribeOn(jdbcScheduler);
     }
-
-    @Override
-    public Mono<Void> deletePassenger(Long id) {
-        return Mono.fromRunnable(() -> {
-                    Passenger passenger = passengerRepository.findByIdAndIsDeletedFalse(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Passenger with id " + id + " not found."));
-                    passenger.setIsDeleted(true);
-                    passengerRepository.save(passenger);
-                })
-                .subscribeOn(jdbcScheduler)
-                .then();
-    }
 }
+

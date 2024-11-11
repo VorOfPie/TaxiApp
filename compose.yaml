@@ -116,7 +116,26 @@ services:
           memory: 256M
 
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.5
+    container_name: keycloak
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak_db
+      KC_DB_USERNAME: username
+      KC_DB_PASSWORD: password
 
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8085
+
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+
+    command: start-dev
+    ports:
+      - "8085:8080"
+    depends_on:
+      - postgres
 
 volumes:
   postgres:
