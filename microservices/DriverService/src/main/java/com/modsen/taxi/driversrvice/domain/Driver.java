@@ -24,6 +24,8 @@ public class Driver {
 
     private String phone;
 
+    private String email;
+
     private String gender;
 
     private Boolean isDeleted;

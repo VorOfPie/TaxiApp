@@ -29,7 +29,6 @@ public class PassengerController {
     private final PassengerService passengerService;
 
     @PostMapping
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public Mono<ResponseEntity<PassengerResponse>> createPassenger(@Valid @RequestBody PassengerRequest passengerRequest) {
         return passengerService.createPassenger(passengerRequest)
                 .map(passenger -> new ResponseEntity<>(passenger, HttpStatus.CREATED));
