@@ -3,7 +3,6 @@ package com.modsen.taxi.passengerservice.service.impl;
 import com.modsen.taxi.passengerservice.domain.Passenger;
 import com.modsen.taxi.passengerservice.dto.PassengerRequest;
 import com.modsen.taxi.passengerservice.dto.PassengerResponse;
-import com.modsen.taxi.passengerservice.dto.PassengerUpdateRequest;
 import com.modsen.taxi.passengerservice.error.exception.AccessDeniedException;
 import com.modsen.taxi.passengerservice.error.exception.DuplicateResourceException;
 import com.modsen.taxi.passengerservice.error.exception.ResourceNotFoundException;
@@ -59,7 +58,7 @@ public class PassengerServiceImpl implements PassengerService {
     }
 
     @Override
-    public Mono<PassengerResponse> updatePassenger(Long id, PassengerUpdateRequest passengerUpdateRequest, String principalEmail, boolean isAdmin) {
+    public Mono<PassengerResponse> updatePassenger(Long id, PassengerRequest passengerRequest, String principalEmail, boolean isAdmin) {
         return Mono.fromCallable(() -> {
                     Passenger passenger = passengerRepository.findByIdAndIsDeletedFalse(id)
                             .orElseThrow(() -> new ResourceNotFoundException("Passenger with id " + id + " not found."));
@@ -67,20 +66,7 @@ public class PassengerServiceImpl implements PassengerService {
                     if (!isAdmin && !passenger.getEmail().equals(principalEmail)) {
                         throw new AccessDeniedException("You do not have permission to update this passenger's information.");
                     }
-
-                    if (passengerUpdateRequest.firstName() != null) {
-                        passenger.setFirstName(passengerUpdateRequest.firstName());
-                    }
-                    if (passengerUpdateRequest.lastName() != null) {
-                        passenger.setLastName(passengerUpdateRequest.lastName());
-                    }
-                    if (passengerUpdateRequest.phone() != null) {
-                        passenger.setPhone(passengerUpdateRequest.phone());
-                    }
-                    if (passengerUpdateRequest.email() != null) {
-                        passenger.setEmail(passengerUpdateRequest.email());
-                    }
-
+                    passengerMapper.updatePassengerFromRequest(passengerRequest, passenger);
                     return passengerRepository.save(passenger);
                 })
                 .subscribeOn(jdbcScheduler)

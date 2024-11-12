@@ -2,7 +2,6 @@ package com.modsen.taxi.passengerservice.controller;
 
 import com.modsen.taxi.passengerservice.dto.PassengerRequest;
 import com.modsen.taxi.passengerservice.dto.PassengerResponse;
-import com.modsen.taxi.passengerservice.dto.PassengerUpdateRequest;
 import com.modsen.taxi.passengerservice.service.PassengerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,11 +36,11 @@ public class PassengerController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public Mono<ResponseEntity<PassengerResponse>> updatePassenger(@PathVariable Long id,
-                                                                   @Valid @RequestBody PassengerUpdateRequest passengerUpdateRequest,
+                                                                   @Valid @RequestBody PassengerRequest passengerRequest,
                                                                    @AuthenticationPrincipal Jwt jwt) {
         String principalEmail = jwt.getClaim("email");
         boolean isAdmin = isAdmin(jwt);
-        return passengerService.updatePassenger(id, passengerUpdateRequest, principalEmail, isAdmin)
+        return passengerService.updatePassenger(id, passengerRequest, principalEmail, isAdmin)
                 .map(updatedPassenger -> new ResponseEntity<>(updatedPassenger, HttpStatus.OK));
     }
 

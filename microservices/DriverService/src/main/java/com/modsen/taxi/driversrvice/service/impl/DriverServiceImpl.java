@@ -4,7 +4,6 @@ import com.modsen.taxi.driversrvice.domain.Car;
 import com.modsen.taxi.driversrvice.domain.Driver;
 import com.modsen.taxi.driversrvice.dto.request.CarRequest;
 import com.modsen.taxi.driversrvice.dto.request.DriverRequest;
-import com.modsen.taxi.driversrvice.dto.request.DriverUpdateRequest;
 import com.modsen.taxi.driversrvice.dto.response.DriverResponse;
 import com.modsen.taxi.driversrvice.error.exception.AccessDeniedException;
 import com.modsen.taxi.driversrvice.error.exception.DuplicateResourceException;
@@ -71,7 +70,7 @@ public class DriverServiceImpl implements DriverService {
     }
 
     @Override
-    public Mono<DriverResponse> updateDriver(Long id, DriverUpdateRequest driverUpdateRequest, String principalEmail, boolean isAdmin) {
+    public Mono<DriverResponse> updateDriver(Long id, DriverRequest driverRequest, String principalEmail, boolean isAdmin) {
         return Mono.fromCallable(() -> {
                     Driver driver = driverRepository.findById(id)
                             .orElseThrow(() -> new ResourceNotFoundException("Driver with id " + id + " not found"));
@@ -80,9 +79,9 @@ public class DriverServiceImpl implements DriverService {
                         throw new AccessDeniedException("You do not have permission to update this driver's information.");
                     }
 
-                    driverMapper.updateDriverFromRequest(driverUpdateRequest, driver);
+                    driverMapper.updateDriverFromRequest(driverRequest, driver);
 
-                    List<Car> associatedCars = associateCarsWithDriver(driverUpdateRequest.cars(), driver);
+                    List<Car> associatedCars = associateCarsWithDriver(driverRequest.cars(), driver);
                     driver.setCars(associatedCars);
 
                     Driver updatedDriver = driverRepository.save(driver);

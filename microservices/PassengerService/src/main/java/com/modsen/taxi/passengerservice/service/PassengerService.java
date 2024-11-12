@@ -2,7 +2,6 @@ package com.modsen.taxi.passengerservice.service;
 
 import com.modsen.taxi.passengerservice.dto.PassengerRequest;
 import com.modsen.taxi.passengerservice.dto.PassengerResponse;
-import com.modsen.taxi.passengerservice.dto.PassengerUpdateRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import reactor.core.publisher.Mono;
@@ -10,7 +9,7 @@ import reactor.core.publisher.Mono;
 public interface PassengerService {
     Mono<PassengerResponse> createPassenger(PassengerRequest passengerRequest);
 
-    Mono<PassengerResponse> updatePassenger(Long id, PassengerUpdateRequest passengerUpdateRequest, String principalEmail, boolean isAdmin);
+    Mono<PassengerResponse> updatePassenger(Long id, PassengerRequest passengerUpdateRequest, String principalEmail, boolean isAdmin);
 
     Mono<PassengerResponse> getPassengerById(Long id, String principalEmail, boolean isAdmin);
 

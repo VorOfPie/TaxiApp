@@ -4,7 +4,6 @@ import com.modsen.taxi.driversrvice.domain.Car;
 import com.modsen.taxi.driversrvice.domain.Driver;
 import com.modsen.taxi.driversrvice.dto.request.CarRequest;
 import com.modsen.taxi.driversrvice.dto.request.DriverRequest;
-import com.modsen.taxi.driversrvice.dto.request.DriverUpdateRequest;
 import com.modsen.taxi.driversrvice.dto.response.DriverResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -33,5 +32,5 @@ public interface DriverMapper {
     }
 
     @Mapping(target = "cars", ignore = true)
-    Driver updateDriverFromRequest(DriverUpdateRequest driverUpdateRequest, @MappingTarget Driver driver);
+    Driver updateDriverFromRequest(DriverRequest driverRequest, @MappingTarget Driver driver);
 }

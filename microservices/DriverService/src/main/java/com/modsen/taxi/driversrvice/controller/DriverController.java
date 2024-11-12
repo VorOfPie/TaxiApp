@@ -1,7 +1,6 @@
 package com.modsen.taxi.driversrvice.controller;
 
 import com.modsen.taxi.driversrvice.dto.request.DriverRequest;
-import com.modsen.taxi.driversrvice.dto.request.DriverUpdateRequest;
 import com.modsen.taxi.driversrvice.dto.response.DriverResponse;
 import com.modsen.taxi.driversrvice.service.DriverService;
 import jakarta.validation.Valid;
@@ -37,11 +36,11 @@ public class DriverController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public Mono<ResponseEntity<DriverResponse>> updateDriver(@PathVariable Long id,
-                                                             @Valid @RequestBody DriverUpdateRequest driverUpdateRequest,
+                                                             @Valid @RequestBody DriverRequest driverRequest,
                                                              @AuthenticationPrincipal Jwt jwt) {
         String principalEmail = jwt.getClaim("email");
         boolean isAdmin = isAdmin(jwt);
-        return driverService.updateDriver(id, driverUpdateRequest, principalEmail, isAdmin)
+        return driverService.updateDriver(id, driverRequest, principalEmail, isAdmin)
                 .map(updatedDriver -> new ResponseEntity<>(updatedDriver, HttpStatus.OK));
     }
 

@@ -62,9 +62,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    public AppError onAccessDeniedException(
-            AccessDeniedException e
-    ) {
-        return AppError.builder().status(HttpStatus.FORBIDDEN.value()).message(e.getMessage()).timestamp(LocalDateTime.now()).build();
+    public AppError onAccessDeniedException(AccessDeniedException e) {
+        return AppError.builder()
+                .status(HttpStatus.FORBIDDEN.value())
+                .message(e.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 }

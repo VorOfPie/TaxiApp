@@ -2,6 +2,7 @@ package com.modsen.taxi.ratingservice.error;
 
 import com.modsen.taxi.ratingservice.dto.error.AppError;
 import com.modsen.taxi.ratingservice.dto.error.AppErrorCustom;
+import com.modsen.taxi.ratingservice.error.exception.AccessDeniedException;
 import com.modsen.taxi.ratingservice.error.exception.DuplicateResourceException;
 import com.modsen.taxi.ratingservice.error.exception.InvalidRequestException;
 import com.modsen.taxi.ratingservice.error.exception.ResourceNotFoundException;
@@ -74,6 +75,15 @@ public class GlobalExceptionHandler {
     public AppError handleInvalidRequestException(InvalidRequestException e) {
         return AppError.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
+                .message(e.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public AppError onAccessDeniedException(AccessDeniedException e) {
+        return AppError.builder()
+                .status(HttpStatus.FORBIDDEN.value())
                 .message(e.getMessage())
                 .timestamp(LocalDateTime.now())
                 .build();
