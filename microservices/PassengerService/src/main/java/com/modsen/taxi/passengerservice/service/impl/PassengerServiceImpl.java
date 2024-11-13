@@ -9,6 +9,7 @@ import com.modsen.taxi.passengerservice.mapper.PassengerMapper;
 import com.modsen.taxi.passengerservice.repository.PassengerRepository;
 import com.modsen.taxi.passengerservice.service.PassengerService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
@@ -19,6 +20,7 @@ import reactor.core.scheduler.Scheduler;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PassengerServiceImpl implements PassengerService {
 
     private final PassengerRepository passengerRepository;
@@ -27,14 +29,18 @@ public class PassengerServiceImpl implements PassengerService {
 
     @Override
     public Mono<PassengerResponse> createPassenger(PassengerRequest passengerRequest) {
+        log.info("Creating passenger with email: {}", passengerRequest.email());
         return Mono.fromCallable(() -> {
                     boolean exists = passengerRepository.existsByEmail(passengerRequest.email());
                     if (exists) {
+                        log.warn("Duplicate passenger with email: {}", passengerRequest.email());
                         throw new DuplicateResourceException("Passenger with email " + passengerRequest.email() + " already exists.");
                     }
                     Passenger passenger = passengerMapper.toPassenger(passengerRequest);
                     passenger.setIsDeleted(false);
-                    return passengerRepository.save(passenger);
+                    Passenger savedPassenger = passengerRepository.save(passenger);
+                    log.info("Passenger created with ID: {}", savedPassenger.getId());
+                    return savedPassenger;
                 })
                 .subscribeOn(jdbcScheduler)
                 .map(passengerMapper::toPassengerResponse);
@@ -42,11 +48,17 @@ public class PassengerServiceImpl implements PassengerService {
 
     @Override
     public Mono<PassengerResponse> updatePassenger(Long id, PassengerRequest passengerRequest) {
+        log.info("Updating passenger with ID: {}", id);
         return Mono.fromCallable(() -> {
                     Passenger passenger = passengerRepository.findByIdAndIsDeletedFalse(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Passenger with id " + id + " not found."));
+                            .orElseThrow(() -> {
+                                log.error("Passenger with ID {} not found", id);
+                                return new ResourceNotFoundException("Passenger with id " + id + " not found.");
+                            });
                     passengerMapper.updatePassengerFromRequest(passengerRequest, passenger);
-                    return passengerRepository.save(passenger);
+                    Passenger updatedPassenger = passengerRepository.save(passenger);
+                    log.info("Passenger updated with ID: {}", updatedPassenger.getId());
+                    return updatedPassenger;
                 })
                 .subscribeOn(jdbcScheduler)
                 .map(passengerMapper::toPassengerResponse);
@@ -54,14 +66,19 @@ public class PassengerServiceImpl implements PassengerService {
 
     @Override
     public Mono<PassengerResponse> getPassengerById(Long id) {
+        log.info("Fetching passenger with ID: {}", id);
         return Mono.fromCallable(() -> passengerRepository.findByIdAndIsDeletedFalse(id)
-                        .orElseThrow(() -> new ResourceNotFoundException("Passenger with id " + id + " not found.")))
+                        .orElseThrow(() -> {
+                            log.error("Passenger with ID {} not found", id);
+                            return new ResourceNotFoundException("Passenger with id " + id + " not found.");
+                        }))
                 .subscribeOn(jdbcScheduler)
                 .map(passengerMapper::toPassengerResponse);
     }
 
     @Override
     public Mono<Page<PassengerResponse>> getAllPassengers(Pageable pageable, String firstName, String lastName, String email, boolean isActive) {
+        log.info("Fetching all passengers with filters - firstName: {}, lastName: {}, email: {}, isActive: {}", firstName, lastName, email, isActive);
         return Mono.fromCallable(() -> {
                     Passenger passengerProbe = Passenger.builder()
                             .firstName(firstName)
@@ -79,6 +96,7 @@ public class PassengerServiceImpl implements PassengerService {
                     Example<Passenger> example = Example.of(passengerProbe, matcher);
 
                     Page<Passenger> passengers = passengerRepository.findAll(example, pageable);
+                    log.info("Fetched {} passengers", passengers.getTotalElements());
                     return passengers.map(passengerMapper::toPassengerResponse);
                 })
                 .subscribeOn(jdbcScheduler);
@@ -86,11 +104,16 @@ public class PassengerServiceImpl implements PassengerService {
 
     @Override
     public Mono<Void> deletePassenger(Long id) {
+        log.info("Deleting passenger with ID: {}", id);
         return Mono.fromRunnable(() -> {
                     Passenger passenger = passengerRepository.findByIdAndIsDeletedFalse(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Passenger with id " + id + " not found."));
+                            .orElseThrow(() -> {
+                                log.error("Passenger with ID {} not found", id);
+                                return new ResourceNotFoundException("Passenger with id " + id + " not found.");
+                            });
                     passenger.setIsDeleted(true);
                     passengerRepository.save(passenger);
+                    log.info("Passenger with ID {} marked as deleted", id);
                 })
                 .subscribeOn(jdbcScheduler)
                 .then();

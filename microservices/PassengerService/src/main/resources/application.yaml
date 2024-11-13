@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: passenger-service
   datasource:
     url: jdbc:postgresql://localhost:5432/passenger_db
     username: username
@@ -23,6 +25,34 @@ passenger:
   scheduler:
     threadPoolSize: 10
     taskQueueSize: 100
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      show-details: always
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1
+    enabled: true
+
+logging:
+  level:
+    root: INFO
+  pattern:
+    console: '{"timestamp":"%d{yyyy-MM-dd HH:mm:ss.SSS}", "level":"%p", "thread":"%t", "traceId":"%X{traceId}", "spanId":"%X{spanId}", "message":"%msg"}'
+
+
 ---
 spring.config.activate.on-profile: docker
 server.port: 8080

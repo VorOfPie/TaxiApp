@@ -1,0 +1,26 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: [ 'prometheus:9090' ]
+  - job_name: "grafana"
+    static_configs:
+      - targets: [ 'grafana:3000' ]
+  - job_name: 'driver-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'driver:8080' ]
+  - job_name: 'passenger-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'passenger:8080' ]
+  - job_name: 'trip-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'trip:8080' ]
+  - job_name: 'rating-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'rating:8080' ]
