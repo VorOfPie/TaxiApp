@@ -13,6 +13,7 @@ import com.modsen.taxi.driversrvice.repository.CarRepository;
 import com.modsen.taxi.driversrvice.repository.DriverRepository;
 import com.modsen.taxi.driversrvice.service.DriverService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DriverServiceImpl implements DriverService {
@@ -36,9 +38,13 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public Mono<DriverResponse> getDriverById(Long id, String principalEmail, boolean isAdmin) {
+        log.info("Fetching driver with ID: {}", id);
         return Mono.fromCallable(() -> {
                     Driver driver = driverRepository.findByIdAndIsDeletedFalse(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Driver with id " + id + " not found."));
+                            .orElseThrow(() -> {
+                            log.error("Driver with ID {} not found", id);
+                            return new ResourceNotFoundException("Driver with id " + id + " not found");
+                        }))
 
                     if (!isAdmin && !driver.getEmail().equals(principalEmail)) {
                         throw new AccessDeniedException("You do not have permission to access this driver's information.");
@@ -52,8 +58,9 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public Mono<DriverResponse> createDriver(DriverRequest driverRequest) {
-        return Mono.fromCallable(() -> {
+        log.info("Creating driver with phone number: {}", driverRequest.phone());
                     if (driverRepository.existsByPhone(driverRequest.phone())) {
+                        log.warn("Driver with phone number {} already exists", driverRequest.phone());
                         throw new DuplicateResourceException("Driver with phone number " + driverRequest.phone() + " already exists.");
                     }
                     Driver driver = driverMapper.toDriver(driverRequest);
@@ -83,7 +90,6 @@ public class DriverServiceImpl implements DriverService {
 
                     List<Car> associatedCars = associateCarsWithDriver(driverRequest.cars(), driver);
                     driver.setCars(associatedCars);
-
                     Driver updatedDriver = driverRepository.save(driver);
 
                     return driverMapper.toDriverResponse(updatedDriver);
@@ -100,9 +106,9 @@ public class DriverServiceImpl implements DriverService {
                     if (!isAdmin && !driver.getEmail().equals(principalEmail)) {
                         throw new AccessDeniedException("You do not have permission to delete this driver.");
                     }
-
                     driver.setIsDeleted(true);
                     driverRepository.save(driver);
+                    log.info("Driver with ID {} marked as deleted", id);
                 })
                 .subscribeOn(jdbcScheduler)
                 .then();
@@ -110,6 +116,9 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public Mono<Page<DriverResponse>> getAllDrivers(Pageable pageable, String firstName, String lastName, String phone, boolean isActive) {
+        log.info("Fetching drivers with filter - firstName: {}, lastName: {}, phone: {}, isActive: {}",
+                firstName, lastName, phone, isActive);
+
         return Mono.fromCallable(() -> {
                     Driver driverProbe = Driver.builder()
                             .firstName(firstName)
@@ -127,6 +136,8 @@ public class DriverServiceImpl implements DriverService {
                     Example<Driver> example = Example.of(driverProbe, matcher);
 
                     Page<Driver> drivers = driverRepository.findAll(example, pageable);
+                    log.info("Found {} drivers", drivers.getTotalElements());
+
                     return drivers.map(driverMapper::toDriverResponse);
                 })
                 .subscribeOn(jdbcScheduler);

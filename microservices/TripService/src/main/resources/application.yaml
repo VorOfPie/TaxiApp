@@ -15,7 +15,7 @@ spring:
             client-id: taxiapp
             client-secret: c6O7xKiHdKAkmJE3UbPBy1MhbmveSpjY
             scope: openid
-
+            
   application:
     name: trip-service
   datasource:
@@ -61,6 +61,32 @@ tripservice:
   urls:
     passenger: http://localhost:7001/api/v1/passengers/
     driver: http://localhost:7002/api/v1/drivers/
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      show-details: always
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1
+    enabled: true
+
+logging:
+  level:
+    root: INFO
+  pattern:
+    console: '{"timestamp":"%d{yyyy-MM-dd HH:mm:ss.SSS}", "level":"%p", "thread":"%t", "traceId":"%X{traceId}", "spanId":"%X{spanId}", "message":"%msg"}'
 
 ---
 spring:
