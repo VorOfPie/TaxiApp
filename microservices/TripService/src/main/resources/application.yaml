@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: trip-service
   datasource:
     url: jdbc:postgresql://localhost:5432/trip_db
     username: username
@@ -9,9 +11,6 @@ spring:
     hibernate:
       ddl-auto: validate
     show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   liquibase:
     change-log: db/changelog/main-changelog.xml
@@ -30,6 +29,16 @@ spring:
 
 
 server.port: 7003
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    initialInstanceInfoReplicationIntervalSeconds: 5
+    registryFetchIntervalSeconds: 5
+  instance:
+    preferIpAddress: true
+    leaseRenewalIntervalInSeconds: 5
+    leaseExpirationDurationInSeconds: 5
 
 tripservice:
   urls:
