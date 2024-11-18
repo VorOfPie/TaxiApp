@@ -9,11 +9,12 @@ import reactor.core.publisher.Mono;
 public interface PassengerService {
     Mono<PassengerResponse> createPassenger(PassengerRequest passengerRequest);
 
-    Mono<PassengerResponse> updatePassenger(Long id, PassengerRequest passengerRequest);
+    Mono<PassengerResponse> updatePassenger(Long id, PassengerRequest passengerUpdateRequest, String principalEmail, boolean isAdmin);
 
-    Mono<PassengerResponse> getPassengerById(Long id);
+    Mono<PassengerResponse> getPassengerById(Long id, String principalEmail, boolean isAdmin);
 
     Mono<Page<PassengerResponse>> getAllPassengers(Pageable pageable, String firstName, String lastName, String email, boolean isActive);
 
-    Mono<Void> deletePassenger(Long id);
+    Mono<Void> deletePassenger(Long id, String principalEmail, boolean isAdmin);
 }
+

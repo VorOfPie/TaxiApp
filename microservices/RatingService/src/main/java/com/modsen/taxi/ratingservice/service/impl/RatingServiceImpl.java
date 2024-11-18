@@ -1,7 +1,5 @@
 package com.modsen.taxi.ratingservice.service.impl;
 
-import com.modsen.taxi.ratingservice.config.DriverClient;
-import com.modsen.taxi.ratingservice.config.PassengerClient;
 import com.modsen.taxi.ratingservice.domain.Rating;
 import com.modsen.taxi.ratingservice.dto.RatingRequest;
 import com.modsen.taxi.ratingservice.dto.response.RatingResponse;
@@ -10,6 +8,7 @@ import com.modsen.taxi.ratingservice.error.exception.ResourceNotFoundException;
 import com.modsen.taxi.ratingservice.mapper.RatingMapper;
 import com.modsen.taxi.ratingservice.repository.RatingRepository;
 import com.modsen.taxi.ratingservice.service.RatingService;
+import com.modsen.taxi.ratingservice.util.PassengerDriverValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
@@ -17,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -24,16 +24,15 @@ public class RatingServiceImpl implements RatingService {
 
     private final RatingRepository ratingRepository;
     private final RatingMapper ratingMapper;
-    private final PassengerClient passengerClient;
-    private final DriverClient driverClient;
-
+    private final PassengerDriverValidator passengerDriverValidator;
 
     @Override
+    @Transactional
     public RatingResponse createRating(RatingRequest ratingRequest) {
-        if (ratingRepository.existsByDriverIdAndPassengerId(ratingRequest.driverId(), ratingRequest.passengerId()))
+        if (ratingRepository.existsByDriverIdAndPassengerId(ratingRequest.driverId(), ratingRequest.passengerId())) {
             throw new DuplicateResourceException("Rating for this driver and passenger already exists.");
-        validatePassengerAndDriverExistence(ratingRequest.passengerId(), ratingRequest.driverId());
-
+        }
+        passengerDriverValidator.validatePassengerAndDriverExistence(ratingRequest.passengerId(), ratingRequest.driverId());
         Rating rating = ratingMapper.toRating(ratingRequest);
         Rating savedRating = ratingRepository.save(rating);
         return ratingMapper.toRatingResponse(savedRating);
@@ -45,14 +44,14 @@ public class RatingServiceImpl implements RatingService {
         if (exists) {
             throw new DuplicateResourceException("Rating for this driver and passenger already exists.");
         }
-
         Rating rating = ratingMapper.toRating(ratingRequest);
         ratingRepository.save(rating);
     }
 
     @Override
+    @Transactional
     public RatingResponse updateRating(Long id, RatingRequest ratingRequest) {
-        validatePassengerAndDriverExistence(ratingRequest.passengerId(), ratingRequest.driverId());
+        passengerDriverValidator.validatePassengerAndDriverAccess(ratingRequest.passengerId(), ratingRequest.driverId());
 
         Rating rating = ratingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Rating with id " + id + " not found."));
@@ -65,6 +64,7 @@ public class RatingServiceImpl implements RatingService {
     public RatingResponse getRatingById(Long id) {
         Rating rating = ratingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Rating with id " + id + " not found."));
+        passengerDriverValidator.validatePassengerAndDriverAccess(rating.getPassengerId(), rating.getDriverId());
         return ratingMapper.toRatingResponse(rating);
     }
 
@@ -83,7 +83,6 @@ public class RatingServiceImpl implements RatingService {
         return ratings.map(ratingMapper::toRatingResponse);
     }
 
-
     @Override
     public Double getAverageRatingForDriver(Long driverId) {
         return ratingRepository.calculateAverageRatingByDriverId(driverId)
@@ -94,20 +93,7 @@ public class RatingServiceImpl implements RatingService {
     public void deleteRating(Long id) {
         Rating rating = ratingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Rating with id " + id + " not found."));
+        passengerDriverValidator.validatePassengerAndDriverAccess(rating.getPassengerId(), rating.getDriverId());
         ratingRepository.delete(rating);
-    }
-
-    private void validatePassengerAndDriverExistence(Long passengerId, Long driverId) {
-        try {
-            passengerClient.getPassengerById(passengerId);
-        } catch (Exception ex) {
-            throw new ResourceNotFoundException("Passenger with id " + passengerId + " not found");
-        }
-
-        try {
-            driverClient.getDriverById(driverId);
-        } catch (Exception ex) {
-            throw new ResourceNotFoundException("Driver with id " + driverId + " not found");
-        }
     }
 }

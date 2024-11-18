@@ -5,6 +5,7 @@ import com.modsen.taxi.driversrvice.domain.Driver;
 import com.modsen.taxi.driversrvice.dto.request.CarRequest;
 import com.modsen.taxi.driversrvice.dto.request.DriverRequest;
 import com.modsen.taxi.driversrvice.dto.response.DriverResponse;
+import com.modsen.taxi.driversrvice.error.exception.AccessDeniedException;
 import com.modsen.taxi.driversrvice.error.exception.DuplicateResourceException;
 import com.modsen.taxi.driversrvice.error.exception.ResourceNotFoundException;
 import com.modsen.taxi.driversrvice.mapper.DriverMapper;
@@ -17,7 +18,6 @@ import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 
@@ -35,9 +35,17 @@ public class DriverServiceImpl implements DriverService {
     private final Scheduler jdbcScheduler;
 
     @Override
-    public Mono<DriverResponse> getDriverById(Long id) {
-        return Mono.fromCallable(() -> driverRepository.findByIdAndIsDeletedFalse(id)
-                        .orElseThrow(() -> new ResourceNotFoundException("Driver with id " + id + " not found")))
+    public Mono<DriverResponse> getDriverById(Long id, String principalEmail, boolean isAdmin) {
+        return Mono.fromCallable(() -> {
+                    Driver driver = driverRepository.findByIdAndIsDeletedFalse(id)
+                            .orElseThrow(() -> new ResourceNotFoundException("Driver with id " + id + " not found."));
+
+                    if (!isAdmin && !driver.getEmail().equals(principalEmail)) {
+                        throw new AccessDeniedException("You do not have permission to access this driver's information.");
+                    }
+
+                    return driver;
+                })
                 .subscribeOn(jdbcScheduler)
                 .map(driverMapper::toDriverResponse);
     }
@@ -45,80 +53,54 @@ public class DriverServiceImpl implements DriverService {
     @Override
     public Mono<DriverResponse> createDriver(DriverRequest driverRequest) {
         return Mono.fromCallable(() -> {
-            if (driverRepository.existsByPhone(driverRequest.phone()))
-                throw new DuplicateResourceException("Driver with phone number " + driverRequest.phone() + " already exists.");
-            Driver driver = driverMapper.toDriver(driverRequest);
-            driver.setIsDeleted(false);
-            validateNewCars(driverRequest.cars());
+                    if (driverRepository.existsByPhone(driverRequest.phone())) {
+                        throw new DuplicateResourceException("Driver with phone number " + driverRequest.phone() + " already exists.");
+                    }
+                    Driver driver = driverMapper.toDriver(driverRequest);
+                    driver.setIsDeleted(false);
+                    validateNewCars(driverRequest.cars());
 
-            Driver savedDriver = driverRepository.save(driver);
-            List<Car> associatedCars = associateCarsWithDriver(driverRequest.cars(), savedDriver);
+                    Driver savedDriver = driverRepository.save(driver);
+                    List<Car> associatedCars = associateCarsWithDriver(driverRequest.cars(), savedDriver);
+                    savedDriver.setCars(associatedCars);
 
-            savedDriver.setCars(associatedCars);
-            Driver finalSavedDriver = driverRepository.save(savedDriver);
-
-            return driverMapper.toDriverResponse(finalSavedDriver);
-
-
-        }).subscribeOn(jdbcScheduler);
+                    return driverMapper.toDriverResponse(savedDriver);
+                })
+                .subscribeOn(jdbcScheduler);
     }
 
-    private void validateNewCars(List<CarRequest> carRequests) {
-        List<Car> cars = driverMapper.carRequestsToCars(carRequests);
-        for (Car newCar : cars) {
-            if (newCar.getId() == null && carRepository.existsByLicensePlate(newCar.getLicensePlate())) {
-                throw new DuplicateResourceException("Car with license plate " + newCar.getLicensePlate() + " already exists.");
-            }
-        }
-    }
-
-
-    private List<Car> associateCarsWithDriver(List<CarRequest> carRequests, Driver savedDriver) {
-        List<Long> carIds = carRequests.stream()
-                .map(CarRequest::id)
-                .collect(Collectors.toList());
-
-        List<Car> existingCars = carRepository.findAllById(carIds);
-        existingCars.forEach(car -> car.setDriver(savedDriver));
-
-        List<Car> newCars = driverMapper.carRequestsToCars(carRequests).stream()
-                .filter(car -> car.getId() == null || !carIds.contains(car.getId()))
-                .peek(car -> car.setDriver(savedDriver))
-                .peek(car -> car.setIsDeleted(false))
-                .collect(Collectors.toList());
-
-        List<Car> savedNewCars = carRepository.saveAll(newCars);
-        carRepository.saveAll(existingCars);
-
-        return Stream.concat(existingCars.stream(), savedNewCars.stream())
-                .collect(Collectors.toList());
-    }
-
-
-    @Transactional
     @Override
-    public Mono<DriverResponse> updateDriver(Long id, DriverRequest driverRequest) {
+    public Mono<DriverResponse> updateDriver(Long id, DriverRequest driverRequest, String principalEmail, boolean isAdmin) {
         return Mono.fromCallable(() -> {
-            Driver driver = driverRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Driver with id " + id + " not found"));
+                    Driver driver = driverRepository.findById(id)
+                            .orElseThrow(() -> new ResourceNotFoundException("Driver with id " + id + " not found"));
 
-            driverMapper.updateDriverFromRequest(driverRequest, driver);
+                    if (!isAdmin && !driver.getEmail().equals(principalEmail)) {
+                        throw new AccessDeniedException("You do not have permission to update this driver's information.");
+                    }
 
-            List<Car> associatedCars = associateCarsWithDriver(driverRequest.cars(), driver);
+                    driverMapper.updateDriverFromRequest(driverRequest, driver);
 
-            driver.setCars(associatedCars);
-            Driver updatedDriver = driverRepository.save(driver);
+                    List<Car> associatedCars = associateCarsWithDriver(driverRequest.cars(), driver);
+                    driver.setCars(associatedCars);
 
-            return driverMapper.toDriverResponse(updatedDriver);
-        }).subscribeOn(jdbcScheduler);
+                    Driver updatedDriver = driverRepository.save(driver);
+
+                    return driverMapper.toDriverResponse(updatedDriver);
+                })
+                .subscribeOn(jdbcScheduler);
     }
 
-
     @Override
-    public Mono<Void> deleteDriver(Long id) {
+    public Mono<Void> deleteDriver(Long id, String principalEmail, boolean isAdmin) {
         return Mono.fromRunnable(() -> {
                     Driver driver = driverRepository.findById(id)
                             .orElseThrow(() -> new ResourceNotFoundException("Driver with id " + id + " not found"));
+
+                    if (!isAdmin && !driver.getEmail().equals(principalEmail)) {
+                        throw new AccessDeniedException("You do not have permission to delete this driver.");
+                    }
+
                     driver.setIsDeleted(true);
                     driverRepository.save(driver);
                 })
@@ -148,5 +130,35 @@ public class DriverServiceImpl implements DriverService {
                     return drivers.map(driverMapper::toDriverResponse);
                 })
                 .subscribeOn(jdbcScheduler);
+    }
+
+    private void validateNewCars(List<CarRequest> carRequests) {
+        List<Car> cars = driverMapper.carRequestsToCars(carRequests);
+        for (Car newCar : cars) {
+            if (newCar.getId() == null && carRepository.existsByLicensePlate(newCar.getLicensePlate())) {
+                throw new DuplicateResourceException("Car with license plate " + newCar.getLicensePlate() + " already exists.");
+            }
+        }
+    }
+
+    private List<Car> associateCarsWithDriver(List<CarRequest> carRequests, Driver savedDriver) {
+        List<Long> carIds = carRequests.stream()
+                .map(CarRequest::id)
+                .collect(Collectors.toList());
+
+        List<Car> existingCars = carRepository.findAllById(carIds);
+        existingCars.forEach(car -> car.setDriver(savedDriver));
+
+        List<Car> newCars = driverMapper.carRequestsToCars(carRequests).stream()
+                .filter(car -> car.getId() == null || !carIds.contains(car.getId()))
+                .peek(car -> car.setDriver(savedDriver))
+                .peek(car -> car.setIsDeleted(false))
+                .collect(Collectors.toList());
+
+        List<Car> savedNewCars = carRepository.saveAll(newCars);
+        carRepository.saveAll(existingCars);
+
+        return Stream.concat(existingCars.stream(), savedNewCars.stream())
+                .collect(Collectors.toList());
     }
 }

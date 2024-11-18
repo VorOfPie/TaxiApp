@@ -3,6 +3,7 @@ package com.modsen.taxi.tripservice.error;
 
 import com.modsen.taxi.tripservice.dto.error.AppError;
 import com.modsen.taxi.tripservice.dto.error.AppErrorCustom;
+import com.modsen.taxi.tripservice.error.exception.AccessDeniedException;
 import com.modsen.taxi.tripservice.error.exception.DuplicateResourceException;
 import com.modsen.taxi.tripservice.error.exception.InvalidRequestException;
 import com.modsen.taxi.tripservice.error.exception.ResourceNotFoundException;
@@ -55,5 +56,15 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public AppError handleInvalidRequestException(InvalidRequestException e) {
         return AppError.builder().status(HttpStatus.BAD_REQUEST.value()).message(e.getMessage()).timestamp(LocalDateTime.now()).build();
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public AppError onAccessDeniedException(AccessDeniedException e) {
+        return AppError.builder()
+                .status(HttpStatus.FORBIDDEN.value())
+                .message(e.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 }

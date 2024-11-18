@@ -1,20 +1,17 @@
 package com.modsen.taxi.tripservice.service.impl;
 
-import com.modsen.taxi.tripservice.config.DriverClient;
-import com.modsen.taxi.tripservice.config.PassengerClient;
 import com.modsen.taxi.tripservice.domain.Trip;
 import com.modsen.taxi.tripservice.domain.TripStatus;
 import com.modsen.taxi.tripservice.dto.request.RatingRequest;
 import com.modsen.taxi.tripservice.dto.request.ScoreRequest;
 import com.modsen.taxi.tripservice.dto.request.TripRequest;
-import com.modsen.taxi.tripservice.dto.response.DriverResponse;
-import com.modsen.taxi.tripservice.dto.response.PassengerResponse;
 import com.modsen.taxi.tripservice.dto.response.TripResponse;
 import com.modsen.taxi.tripservice.error.exception.InvalidRequestException;
 import com.modsen.taxi.tripservice.error.exception.ResourceNotFoundException;
 import com.modsen.taxi.tripservice.mapper.TripMapper;
 import com.modsen.taxi.tripservice.repository.TripRepository;
 import com.modsen.taxi.tripservice.service.TripService;
+import com.modsen.taxi.tripservice.util.PassengerDriverValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
@@ -33,28 +30,23 @@ public class TripServiceImpl implements TripService {
 
     private final TripRepository tripRepository;
     private final TripMapper tripMapper;
-    private final PassengerClient passengerClient;
-    private final DriverClient driverClient;
-
     private final KafkaTemplate<String, RatingRequest> kafkaTemplate;
+    private final PassengerDriverValidator passengerDriverValidator;
 
     @Override
     @Transactional
     public TripResponse createTrip(TripRequest tripRequest) {
-        validatePassengerAndDriverExistence(tripRequest.passengerId(), tripRequest.driverId());
-
+        passengerDriverValidator.validatePassengerAndDriverExistence(tripRequest.passengerId(), tripRequest.driverId());
         Trip trip = tripMapper.toEntity(tripRequest);
         trip.setStatus(TripStatus.CREATED);
         Trip savedTrip = tripRepository.save(trip);
-
         return tripMapper.toDTO(savedTrip);
     }
 
     @Override
     @Transactional
     public TripResponse updateTrip(Long id, TripRequest tripRequest) {
-        validatePassengerAndDriverExistence(tripRequest.passengerId(), tripRequest.driverId());
-
+        passengerDriverValidator.validatePassengerAndDriverAccess(tripRequest.passengerId(), tripRequest.driverId());
         Trip existingTrip = tripRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Trip with id " + id + " not found"));
         tripMapper.updateTripFromRequest(tripRequest, existingTrip);
@@ -65,7 +57,8 @@ public class TripServiceImpl implements TripService {
     @Override
     public TripResponse getTripById(Long id) {
         Trip trip = tripRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Trip not with id " + id + " not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Trip with id " + id + " not found"));
+        passengerDriverValidator.validatePassengerAndDriverAccess(trip.getPassengerId(), trip.getDriverId());
         return tripMapper.toDTO(trip);
     }
 
@@ -88,7 +81,6 @@ public class TripServiceImpl implements TripService {
         Example<Trip> example = Example.of(probe, matcher);
 
         Page<Trip> trips = tripRepository.findAll(example, pageable);
-
         return trips.map(tripMapper::toDTO);
     }
 
@@ -97,7 +89,7 @@ public class TripServiceImpl implements TripService {
     public TripResponse updateTripStatus(Long id, String status) {
         Trip existingTrip = tripRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Trip with id " + id + " not found"));
-
+        passengerDriverValidator.validatePassengerAndDriverAccess(existingTrip.getPassengerId(), existingTrip.getDriverId());
         existingTrip.setStatus(TripStatus.valueOf(status.toUpperCase()));
         Trip updatedTrip = tripRepository.save(existingTrip);
         return tripMapper.toDTO(updatedTrip);
@@ -106,8 +98,8 @@ public class TripServiceImpl implements TripService {
     @Override
     public void deleteTrip(Long id) {
         Trip existingTrip = tripRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Trip not found with id: " + id));
-
+                .orElseThrow(() -> new ResourceNotFoundException("Trip with id " + id + " not found"));
+        passengerDriverValidator.validatePassengerAndDriverAccess(existingTrip.getPassengerId(), existingTrip.getDriverId());
         tripRepository.delete(existingTrip);
     }
 
@@ -116,6 +108,7 @@ public class TripServiceImpl implements TripService {
     public void closeAndRateTrip(Long id, ScoreRequest scoreRequest) {
         Trip trip = tripRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Trip with id " + id + " not found"));
+        passengerDriverValidator.validatePassengerAndDriverAccess(trip.getPassengerId(), trip.getDriverId());
 
         try {
             RatingRequest ratingRequest = RatingRequest.builder()
@@ -127,28 +120,13 @@ public class TripServiceImpl implements TripService {
 
             trip.setStatus(TripStatus.COMPLETED);
             tripRepository.save(trip);
-            Message<RatingRequest> message = MessageBuilder.
-                    withPayload(ratingRequest)
+            Message<RatingRequest> message = MessageBuilder.withPayload(ratingRequest)
                     .setHeader(KafkaHeaders.TOPIC, "rating-topic")
                     .build();
             kafkaTemplate.send(message);
 
         } catch (Exception ex) {
             throw new InvalidRequestException("Failed to send rating event via Kafka");
-        }
-    }
-
-    private void validatePassengerAndDriverExistence(Long passengerId, Long driverId) {
-        try {
-            PassengerResponse passenger = passengerClient.getPassengerById(passengerId);
-        } catch (Exception ex) {
-            throw new ResourceNotFoundException("Passenger with id " + passengerId + " not found");
-        }
-
-        try {
-            DriverResponse driver = driverClient.getDriverById(driverId);
-        } catch (Exception ex) {
-            throw new ResourceNotFoundException("Driver with id " + driverId + " not found");
         }
     }
 }

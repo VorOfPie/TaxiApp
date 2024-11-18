@@ -16,6 +16,8 @@ public record DriverResponse(
 
         String gender,
 
+        String email,
+
         List<CarResponse> cars
 ) {
 }

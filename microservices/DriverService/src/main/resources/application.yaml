@@ -1,4 +1,20 @@
 spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8085/realms/taxiapp-realm
+
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8085/realms/taxiapp-realm
+            user-name-attribute: preferred_username
+        registration:
+          keycloak:
+            client-id: taxiapp
+            client-secret: c6O7xKiHdKAkmJE3UbPBy1MhbmveSpjY
+            scope: openid
   application:
     name: driver-service
   datasource:

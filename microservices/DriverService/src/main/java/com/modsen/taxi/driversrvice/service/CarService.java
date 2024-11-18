@@ -7,13 +7,13 @@ import org.springframework.data.domain.Pageable;
 import reactor.core.publisher.Mono;
 
 public interface CarService {
-    Mono<CarResponse> getCarById(Long id);
+    Mono<CarResponse> getCarById(Long id, String principalEmail, boolean isAdmin);
 
     Mono<CarResponse> createCar(CreateCarRequest createCarRequest);
 
-    Mono<CarResponse> updateCar(Long id, CreateCarRequest createCarRequest);
+    Mono<CarResponse> updateCar(Long id, CreateCarRequest createCarRequest, String principalEmail, boolean isAdmin);
 
-    Mono<Void> deleteCar(Long id);
+    Mono<Void> deleteCar(Long id, String principalEmail, boolean isAdmin);
 
     Mono<Page<CarResponse>> getAllCars(Pageable pageable, String brand, String color, String licensePlate, boolean isActive);
 }
