@@ -3,6 +3,7 @@ package com.modsen.taxi.ratingservice.controller;
 import com.modsen.taxi.ratingservice.dto.RatingRequest;
 import com.modsen.taxi.ratingservice.dto.response.RatingResponse;
 import com.modsen.taxi.ratingservice.service.RatingService;
+import com.modsen.taxi.ratingservice.swagger.RatingApi;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +23,7 @@ import java.util.Map;
 @RequestMapping("/api/v1/rating")
 @Validated
 @RequiredArgsConstructor
-public class RatingController {
+public class RatingController implements RatingApi {
 
     private final RatingService ratingService;
 
@@ -32,6 +34,7 @@ public class RatingController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<RatingResponse> updateRating(@PathVariable Long id, @Valid @RequestBody RatingRequest ratingRequest) {
         RatingResponse updatedRating = ratingService.updateRating(id, ratingRequest);
         return new ResponseEntity<>(updatedRating, HttpStatus.OK);
@@ -44,6 +47,7 @@ public class RatingController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getAllRatings(
             @RequestParam(required = false) Long driverId,
             @RequestParam(required = false) Long passengerId,
@@ -73,12 +77,14 @@ public class RatingController {
     }
 
     @GetMapping("/{driverId}/average")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<Double> getAverageRatingForDriver(@PathVariable Long driverId) {
         Double averageRating = ratingService.getAverageRatingForDriver(driverId);
         return new ResponseEntity<>(averageRating, HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<Void> deleteRating(@PathVariable Long id) {
         ratingService.deleteRating(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
