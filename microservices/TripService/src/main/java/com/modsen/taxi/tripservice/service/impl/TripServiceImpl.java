@@ -151,5 +151,4 @@ public class TripServiceImpl implements TripService {
             throw new ResourceNotFoundException("Driver with id " + driverId + " not found");
         }
     }
-
 }
