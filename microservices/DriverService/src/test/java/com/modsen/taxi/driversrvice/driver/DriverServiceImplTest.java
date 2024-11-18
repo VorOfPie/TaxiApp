@@ -78,14 +78,12 @@ public class DriverServiceImplTest {
                 .expectNextMatches(response -> response.phone().equals("1234567890"))
                 .verifyComplete();
 
-        verify(driverRepository).save(driver1);
+        verify(driverRepository, times(2)).save(driver1);
     }
 
     @Test
     void createDriver_ShouldThrowDuplicateResourceException_WhenDriverAlreadyExists() {
         when(driverRepository.existsByPhone(anyString())).thenReturn(true);
-        when(driverMapper.toDriver(driverRequest)).thenReturn(driver1);
-
         Mono<DriverResponse> result = driverService.createDriver(driverRequest);
 
         StepVerifier.create(result)
