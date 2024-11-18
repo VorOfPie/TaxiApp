@@ -15,6 +15,7 @@ services:
       resources:
         limits:
           memory: 256M
+
   driver:
     build: microservices/DriverService
     depends_on:
@@ -48,7 +49,6 @@ services:
         limits:
           memory: 256M
 
-
   rating:
     build: microservices/RatingService
     depends_on:
@@ -61,6 +61,18 @@ services:
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - SPRING_PROFILES_ACTIVE=docker
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  api-gateway:
+    build: spring-cloud/api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     deploy:
       resources:
         limits:
@@ -115,7 +127,6 @@ services:
         limits:
           memory: 256M
 
-
   keycloak:
     image: quay.io/keycloak/keycloak:26.0.5
     container_name: keycloak
@@ -136,7 +147,6 @@ services:
       - "8085:8080"
     depends_on:
       - postgres
-
 volumes:
   postgres:
     driver: local

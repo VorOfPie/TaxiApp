@@ -15,6 +15,8 @@ spring:
             client-id: taxiapp
             client-secret: c6O7xKiHdKAkmJE3UbPBy1MhbmveSpjY
             scope: openid
+  application:
+    name: rating-service
   datasource:
     url: jdbc:postgresql://localhost:5432/rating_db
     username: username
@@ -25,9 +27,7 @@ spring:
     hibernate:
       ddl-auto: none
     show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+
 
   liquibase:
     change-log: db/changelog/main-changelog.xml
@@ -49,6 +49,17 @@ spring:
 
 server:
   port: 7004
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    initialInstanceInfoReplicationIntervalSeconds: 5
+    registryFetchIntervalSeconds: 5
+  instance:
+    preferIpAddress: true
+    leaseRenewalIntervalInSeconds: 5
+    leaseExpirationDurationInSeconds: 5
 
 ratingservice:
   urls:

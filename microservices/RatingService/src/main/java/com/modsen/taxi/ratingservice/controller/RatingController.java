@@ -3,6 +3,7 @@ package com.modsen.taxi.ratingservice.controller;
 import com.modsen.taxi.ratingservice.dto.RatingRequest;
 import com.modsen.taxi.ratingservice.dto.response.RatingResponse;
 import com.modsen.taxi.ratingservice.service.RatingService;
+import com.modsen.taxi.ratingservice.swagger.RatingApi;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,7 +23,7 @@ import java.util.Map;
 @RequestMapping("/api/v1/rating")
 @Validated
 @RequiredArgsConstructor
-public class RatingController {
+public class RatingController implements RatingApi {
 
     private final RatingService ratingService;
 

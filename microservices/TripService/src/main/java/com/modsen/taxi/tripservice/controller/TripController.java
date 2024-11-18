@@ -4,6 +4,7 @@ import com.modsen.taxi.tripservice.dto.request.ScoreRequest;
 import com.modsen.taxi.tripservice.dto.request.TripRequest;
 import com.modsen.taxi.tripservice.dto.response.TripResponse;
 import com.modsen.taxi.tripservice.service.TripService;
+import com.modsen.taxi.tripservice.swagger.TripApi;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,7 +25,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/trips")
 @RequiredArgsConstructor
-public class TripController {
+public class TripController implements TripApi {
 
     private final TripService tripService;
 

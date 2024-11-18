@@ -3,6 +3,7 @@ package com.modsen.taxi.driversrvice.controller;
 import com.modsen.taxi.driversrvice.dto.request.CreateCarRequest;
 import com.modsen.taxi.driversrvice.dto.response.CarResponse;
 import com.modsen.taxi.driversrvice.service.CarService;
+import com.modsen.taxi.driversrvice.swagger.CarApi;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,7 +23,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/cars")
 @RequiredArgsConstructor
-public class CarController {
+public class CarController implements CarApi {
 
     private final CarService carService;
 

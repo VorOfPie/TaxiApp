@@ -3,6 +3,7 @@ package com.modsen.taxi.passengerservice.controller;
 import com.modsen.taxi.passengerservice.dto.PassengerRequest;
 import com.modsen.taxi.passengerservice.dto.PassengerResponse;
 import com.modsen.taxi.passengerservice.service.PassengerService;
+import com.modsen.taxi.passengerservice.swagger.PassengerApi;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -23,7 +24,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/passengers")
 @RequiredArgsConstructor
-public class PassengerController {
+public class PassengerController implements PassengerApi {
 
     private final PassengerService passengerService;
 

@@ -15,6 +15,8 @@ spring:
             client-id: taxiapp
             client-secret: c6O7xKiHdKAkmJE3UbPBy1MhbmveSpjY
             scope: openid
+  application:
+    name: driver-service
   datasource:
     url: jdbc:postgresql://localhost:5432/driver_db
     username: username
@@ -34,6 +36,16 @@ spring:
     enabled: true
 server:
   port: 7002
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    initialInstanceInfoReplicationIntervalSeconds: 5
+    registryFetchIntervalSeconds: 5
+  instance:
+    preferIpAddress: true
+    leaseRenewalIntervalInSeconds: 5
+    leaseExpirationDurationInSeconds: 5
 
 driver:
   scheduler:
