@@ -1,4 +1,23 @@
 spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8085/realms/taxiapp-realm
+
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8085/realms/taxiapp-realm
+            user-name-attribute: preferred_username
+        registration:
+          keycloak:
+            client-id: taxiapp
+            client-secret: c6O7xKiHdKAkmJE3UbPBy1MhbmveSpjY
+            scope: openid
+            
+  application:
+    name: trip-service
   datasource:
     url: jdbc:postgresql://localhost:5432/trip_db
     username: username
@@ -9,9 +28,6 @@ spring:
     hibernate:
       ddl-auto: validate
     show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   liquibase:
     change-log: db/changelog/main-changelog.xml
@@ -30,11 +46,47 @@ spring:
 
 
 server.port: 7003
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    initialInstanceInfoReplicationIntervalSeconds: 5
+    registryFetchIntervalSeconds: 5
+  instance:
+    preferIpAddress: true
+    leaseRenewalIntervalInSeconds: 5
+    leaseExpirationDurationInSeconds: 5
 
 tripservice:
   urls:
     passenger: http://localhost:7001/api/v1/passengers/
     driver: http://localhost:7002/api/v1/drivers/
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      show-details: always
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1
+    enabled: true
+
+logging:
+  level:
+    root: INFO
+  pattern:
+    console: '{"timestamp":"%d{yyyy-MM-dd HH:mm:ss.SSS}", "level":"%p", "thread":"%t", "traceId":"%X{traceId}", "spanId":"%X{spanId}", "message":"%msg"}'
 
 ---
 spring:

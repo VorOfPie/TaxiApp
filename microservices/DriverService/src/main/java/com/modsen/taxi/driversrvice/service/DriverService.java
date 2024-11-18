@@ -8,13 +8,13 @@ import reactor.core.publisher.Mono;
 
 public interface DriverService {
 
-    Mono<DriverResponse> getDriverById(Long id);
+    Mono<DriverResponse> getDriverById(Long id, String principalEmail, boolean isAdmin);
 
     Mono<DriverResponse> createDriver(DriverRequest driverRequest);
 
-    Mono<DriverResponse> updateDriver(Long id, DriverRequest driverRequest);
+    Mono<DriverResponse> updateDriver(Long id, DriverRequest driverRequest, String principalEmail, boolean isAdmin);
 
-    Mono<Void> deleteDriver(Long id);
+    Mono<Void> deleteDriver(Long id, String principalEmail, boolean isAdmin);
 
     Mono<Page<DriverResponse>> getAllDrivers(Pageable pageable, String firstName, String lastName, String phone, boolean isActive);
 }

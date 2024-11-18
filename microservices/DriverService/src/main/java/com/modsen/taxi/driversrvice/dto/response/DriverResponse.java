@@ -14,6 +14,8 @@ public record DriverResponse(
 
         String phone,
 
+        String email,
+
         String gender,
 
         List<CarResponse> cars

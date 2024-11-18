@@ -5,6 +5,7 @@ import com.modsen.taxi.driversrvice.domain.Driver;
 import com.modsen.taxi.driversrvice.dto.request.CarRequest;
 import com.modsen.taxi.driversrvice.dto.request.DriverRequest;
 import com.modsen.taxi.driversrvice.dto.response.DriverResponse;
+import com.modsen.taxi.driversrvice.error.exception.AccessDeniedException;
 import com.modsen.taxi.driversrvice.error.exception.DuplicateResourceException;
 import com.modsen.taxi.driversrvice.error.exception.ResourceNotFoundException;
 import com.modsen.taxi.driversrvice.mapper.DriverMapper;
@@ -12,13 +13,12 @@ import com.modsen.taxi.driversrvice.repository.CarRepository;
 import com.modsen.taxi.driversrvice.repository.DriverRepository;
 import com.modsen.taxi.driversrvice.service.DriverService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 
@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DriverServiceImpl implements DriverService {
@@ -36,34 +37,110 @@ public class DriverServiceImpl implements DriverService {
     private final Scheduler jdbcScheduler;
 
     @Override
-    public Mono<DriverResponse> getDriverById(Long id) {
-        return Mono.fromCallable(() -> driverRepository.findByIdAndIsDeletedFalse(id)
-                        .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + id)))
+    public Mono<DriverResponse> getDriverById(Long id, String principalEmail, boolean isAdmin) {
+        log.info("Fetching driver with ID: {}", id);
+        return Mono.fromCallable(() -> {
+                    Driver driver = driverRepository.findByIdAndIsDeletedFalse(id)
+                            .orElseThrow(() -> {
+                            log.error("Driver with ID {} not found", id);
+                            return new ResourceNotFoundException("Driver with id " + id + " not found");
+                        }))
+
+                    if (!isAdmin && !driver.getEmail().equals(principalEmail)) {
+                        throw new AccessDeniedException("You do not have permission to access this driver's information.");
+                    }
+
+                    return driver;
+                })
                 .subscribeOn(jdbcScheduler)
                 .map(driverMapper::toDriverResponse);
     }
 
     @Override
     public Mono<DriverResponse> createDriver(DriverRequest driverRequest) {
+        log.info("Creating driver with phone number: {}", driverRequest.phone());
+                    if (driverRepository.existsByPhone(driverRequest.phone())) {
+                        log.warn("Driver with phone number {} already exists", driverRequest.phone());
+                        throw new DuplicateResourceException("Driver with phone number " + driverRequest.phone() + " already exists.");
+                    }
+                    Driver driver = driverMapper.toDriver(driverRequest);
+                    driver.setIsDeleted(false);
+                    validateNewCars(driverRequest.cars());
+
+                    Driver savedDriver = driverRepository.save(driver);
+                    List<Car> associatedCars = associateCarsWithDriver(driverRequest.cars(), savedDriver);
+                    savedDriver.setCars(associatedCars);
+
+                    return driverMapper.toDriverResponse(savedDriver);
+                })
+                .subscribeOn(jdbcScheduler);
+    }
+
+    @Override
+    public Mono<DriverResponse> updateDriver(Long id, DriverRequest driverRequest, String principalEmail, boolean isAdmin) {
         return Mono.fromCallable(() -> {
-            Driver driver = driverMapper.toDriver(driverRequest);
-            driver.setIsDeleted(false);
+                    Driver driver = driverRepository.findById(id)
+                            .orElseThrow(() -> new ResourceNotFoundException("Driver with id " + id + " not found"));
 
-            try {
-                validateNewCars(driverRequest.cars());
+                    if (!isAdmin && !driver.getEmail().equals(principalEmail)) {
+                        throw new AccessDeniedException("You do not have permission to update this driver's information.");
+                    }
 
-                Driver savedDriver = driverRepository.save(driver);
-                List<Car> associatedCars = associateCarsWithDriver(driverRequest.cars(), savedDriver);
+                    driverMapper.updateDriverFromRequest(driverRequest, driver);
 
-                savedDriver.setCars(associatedCars);
-                Driver finalSavedDriver = driverRepository.save(savedDriver);
+                    List<Car> associatedCars = associateCarsWithDriver(driverRequest.cars(), driver);
+                    driver.setCars(associatedCars);
+                    Driver updatedDriver = driverRepository.save(driver);
 
-                return driverMapper.toDriverResponse(finalSavedDriver);
+                    return driverMapper.toDriverResponse(updatedDriver);
+                })
+                .subscribeOn(jdbcScheduler);
+    }
 
-            } catch (DataIntegrityViolationException e) {
-                throw new DuplicateResourceException("Driver with phone number " + driver.getPhone() + " already exists.");
-            }
-        }).subscribeOn(jdbcScheduler);
+    @Override
+    public Mono<Void> deleteDriver(Long id, String principalEmail, boolean isAdmin) {
+        return Mono.fromRunnable(() -> {
+                    Driver driver = driverRepository.findById(id)
+                            .orElseThrow(() -> new ResourceNotFoundException("Driver with id " + id + " not found"));
+
+                    if (!isAdmin && !driver.getEmail().equals(principalEmail)) {
+                        throw new AccessDeniedException("You do not have permission to delete this driver.");
+                    }
+                    driver.setIsDeleted(true);
+                    driverRepository.save(driver);
+                    log.info("Driver with ID {} marked as deleted", id);
+                })
+                .subscribeOn(jdbcScheduler)
+                .then();
+    }
+
+    @Override
+    public Mono<Page<DriverResponse>> getAllDrivers(Pageable pageable, String firstName, String lastName, String phone, boolean isActive) {
+        log.info("Fetching drivers with filter - firstName: {}, lastName: {}, phone: {}, isActive: {}",
+                firstName, lastName, phone, isActive);
+
+        return Mono.fromCallable(() -> {
+                    Driver driverProbe = Driver.builder()
+                            .firstName(firstName)
+                            .lastName(lastName)
+                            .phone(phone)
+                            .isDeleted(!isActive)
+                            .build();
+
+                    ExampleMatcher matcher = ExampleMatcher.matchingAll()
+                            .withIgnoreNullValues()
+                            .withMatcher("firstName", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase())
+                            .withMatcher("lastName", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase())
+                            .withMatcher("phone", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase());
+
+                    Example<Driver> example = Example.of(driverProbe, matcher);
+
+                    Page<Driver> drivers = driverRepository.findAll(example, pageable);
+                    log.info("Found {} drivers", drivers.getTotalElements());
+
+                    return drivers.map(driverMapper::toDriverResponse);
+                })
+                .subscribeOn(jdbcScheduler);
     }
 
     private void validateNewCars(List<CarRequest> carRequests) {
@@ -74,7 +151,6 @@ public class DriverServiceImpl implements DriverService {
             }
         }
     }
-
 
     private List<Car> associateCarsWithDriver(List<CarRequest> carRequests, Driver savedDriver) {
         List<Long> carIds = carRequests.stream()
@@ -95,61 +171,5 @@ public class DriverServiceImpl implements DriverService {
 
         return Stream.concat(existingCars.stream(), savedNewCars.stream())
                 .collect(Collectors.toList());
-    }
-
-
-    @Transactional
-    @Override
-    public Mono<DriverResponse> updateDriver(Long id, DriverRequest driverRequest) {
-        return Mono.fromCallable(() -> {
-            Driver driver = driverRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + id));
-
-            driverMapper.updateDriverFromRequest(driverRequest, driver);
-
-            List<Car> associatedCars = associateCarsWithDriver(driverRequest.cars(), driver);
-
-            driver.setCars(associatedCars);
-            Driver updatedDriver = driverRepository.save(driver);
-
-            return driverMapper.toDriverResponse(updatedDriver);
-        }).subscribeOn(jdbcScheduler);
-    }
-
-
-    @Override
-    public Mono<Void> deleteDriver(Long id) {
-        return Mono.fromRunnable(() -> {
-                    Driver driver = driverRepository.findById(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + id));
-                    driver.setIsDeleted(true);
-                    driverRepository.save(driver);
-                })
-                .subscribeOn(jdbcScheduler)
-                .then();
-    }
-
-    @Override
-    public Mono<Page<DriverResponse>> getAllDrivers(Pageable pageable, String firstName, String lastName, String phone, boolean isActive) {
-        return Mono.fromCallable(() -> {
-                    Driver driverProbe = Driver.builder()
-                            .firstName(firstName)
-                            .lastName(lastName)
-                            .phone(phone)
-                            .isDeleted(!isActive)
-                            .build();
-
-                    ExampleMatcher matcher = ExampleMatcher.matchingAll()
-                            .withIgnoreNullValues()
-                            .withMatcher("firstName", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase())
-                            .withMatcher("lastName", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase())
-                            .withMatcher("phone", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase());
-
-                    Example<Driver> example = Example.of(driverProbe, matcher);
-
-                    Page<Driver> drivers = driverRepository.findAll(example, pageable);
-                    return drivers.map(driverMapper::toDriverResponse);
-                })
-                .subscribeOn(jdbcScheduler);
     }
 }

@@ -13,8 +13,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import java.nio.file.AccessDeniedException;
+import com.modsen.taxi.driversrvice.error.exception.AccessDeniedException;
+ 
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Objects;
@@ -90,7 +90,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    public AppError handleAccessDeniedException(AccessDeniedException e) {
+    public AppError onAccessDeniedException(AccessDeniedException e) {
         return AppError.builder()
                 .status(HttpStatus.FORBIDDEN.value())
                 .message(e.getMessage())

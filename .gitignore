@@ -41,3 +41,5 @@ build/
 
 ### DS.Store
 **/.DS_Store
+/.gigaide/gigaide.properties
+/spring-cloud/api-gateway/.gigaide/gigaide.properties
