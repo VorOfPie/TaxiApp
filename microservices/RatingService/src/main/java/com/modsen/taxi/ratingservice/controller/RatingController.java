@@ -21,7 +21,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/rating")
-@Validated
 @RequiredArgsConstructor
 public class RatingController implements RatingApi {
 
@@ -41,6 +40,7 @@ public class RatingController implements RatingApi {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<RatingResponse> getRatingById(@PathVariable Long id) {
         RatingResponse ratingResponse = ratingService.getRatingById(id);
         return new ResponseEntity<>(ratingResponse, HttpStatus.OK);

@@ -1,7 +1,3 @@
-package com.modsen.taxi.passengerservice.error.exception;
+package com.modsen.taxi.passengerservice.error.exception
 
-public class AccessDeniedException extends RuntimeException {
-    public AccessDeniedException(String message) {
-        super(message);
-    }
-}
+class AccessDeniedException(message: String) : RuntimeException(message)

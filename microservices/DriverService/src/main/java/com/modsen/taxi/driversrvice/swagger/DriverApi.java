@@ -9,8 +9,11 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,10 +22,17 @@ import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
-@Tag(name = "Driver Controller", description = "API for managing drivers")
+@Tag(name = "Driver Controller", description = """
+        API for managing drivers, including creation, updating, deletion, and retrieval of driver details.
+        Access is controlled through role-based security:
+        - Users with the role `ROLE_USER` can access and modify their own driver details.
+        - Users with the role `ROLE_ADMIN` have full access to all drivers.
+        Each request must include a valid JWT token in the Authorization header (Bearer Authentication).
+    """)
 public interface DriverApi {
 
-    @Operation(summary = "Get a list of drivers with optional filters")
+    @Operation(summary = "Get a list of drivers with optional filters",
+            security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "List of drivers retrieved successfully", content = @Content(schema = @Schema(implementation = Map.class))),
             @ApiResponse(responseCode = "400", description = "Invalid filter parameters", content = @Content(schema = @Schema(implementation = AppErrorCustom.class))),
@@ -37,7 +47,8 @@ public interface DriverApi {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id,asc") String sort);
 
-    @Operation(summary = "Create a new driver")
+    @Operation(summary = "Create a new driver",
+            security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Driver created successfully", content = @Content(schema = @Schema(implementation = DriverResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content(schema = @Schema(implementation = AppErrorCustom.class))),
@@ -45,28 +56,35 @@ public interface DriverApi {
     })
     Mono<ResponseEntity<DriverResponse>> createDriver(@Validated @RequestBody DriverRequest driverRequest);
 
-    @Operation(summary = "Update an existing driver")
+    @Operation(summary = "Update an existing driver",
+            security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Driver updated successfully", content = @Content(schema = @Schema(implementation = DriverResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content(schema = @Schema(implementation = AppErrorCustom.class))),
             @ApiResponse(responseCode = "404", description = "Driver not found", content = @Content(schema = @Schema(implementation = AppError.class))),
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = AppError.class)))
     })
-    Mono<ResponseEntity<DriverResponse>> updateDriver(@PathVariable Long id, @Validated @RequestBody DriverRequest driverRequest);
+    Mono<ResponseEntity<DriverResponse>> updateDriver(@PathVariable Long id,
+                                                      @Validated @RequestBody DriverRequest driverRequest,
+                                                      @AuthenticationPrincipal Jwt jwt);
 
-    @Operation(summary = "Delete a driver by ID")
+    @Operation(summary = "Delete a driver by ID",
+            security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Driver deleted successfully"),
             @ApiResponse(responseCode = "404", description = "Driver not found", content = @Content(schema = @Schema(implementation = AppError.class))),
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = AppError.class)))
     })
-    Mono<ResponseEntity<Void>> deleteDriver(@PathVariable Long id);
+    Mono<ResponseEntity<Void>> deleteDriver(@PathVariable Long id,
+                                            @AuthenticationPrincipal Jwt jwt);
 
-    @Operation(summary = "Get driver details by ID")
+    @Operation(summary = "Get driver details by ID",
+            security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Driver retrieved successfully", content = @Content(schema = @Schema(implementation = DriverResponse.class))),
             @ApiResponse(responseCode = "404", description = "Driver not found", content = @Content(schema = @Schema(implementation = AppError.class))),
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = AppError.class)))
     })
-    Mono<ResponseEntity<DriverResponse>> getDriverById(@PathVariable Long id);
+    Mono<ResponseEntity<DriverResponse>> getDriverById(@PathVariable Long id,
+                                                       @AuthenticationPrincipal Jwt jwt);
 }

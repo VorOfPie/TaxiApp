@@ -43,3 +43,4 @@ build/
 **/.DS_Store
 /.gigaide/gigaide.properties
 /spring-cloud/api-gateway/.gigaide/gigaide.properties
+/keycloak.json

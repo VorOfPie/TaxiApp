@@ -13,7 +13,7 @@ spring:
         registration:
           keycloak:
             client-id: taxiapp
-            client-secret: c6O7xKiHdKAkmJE3UbPBy1MhbmveSpjY
+            client-secret: Xbfrxu5jJRqzK0C36c0WPOCovoLRerO3
             scope: openid
   application:
     name: driver-service
@@ -53,6 +53,14 @@ driver:
     taskQueueSize: 100
 
 
+
+
+
+---
+spring.config.activate.on-profile: docker
+server.port: 8080
+
+
 management:
   endpoints:
     web:
@@ -77,7 +85,3 @@ logging:
     root: INFO
   pattern:
     console: '{"timestamp":"%d{yyyy-MM-dd HH:mm:ss.SSS}", "level":"%p", "thread":"%t", "traceId":"%X{traceId}", "spanId":"%X{spanId}", "message":"%msg"}'
-
----
-spring.config.activate.on-profile: docker
-server.port: 8080

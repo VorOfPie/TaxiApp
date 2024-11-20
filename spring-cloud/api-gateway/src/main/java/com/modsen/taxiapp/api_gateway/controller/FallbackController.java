@@ -28,9 +28,15 @@ public class FallbackController {
                 .body("Trip Service is currently unavailable. Please try again later.");
     }
 
-    @GetMapping("/ratings")
+    @GetMapping("/rating")
     public ResponseEntity<String> ratingsFallback() {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body("Rating Service is currently unavailable. Please try again later.");
+    }
+
+    @GetMapping("/cars")
+    public ResponseEntity<String> carsFallback() {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body("Car Service is currently unavailable. Please try again later.");
     }
 }
