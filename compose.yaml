@@ -214,7 +214,7 @@ services:
       - logstash
       
   keycloak:
-    image: quay.io/keycloak/keycloak:26.0.5
+    image: quay.io/keycloak/keycloak:26.0
     container_name: keycloak
     environment:
       KC_DB: postgres

@@ -12,12 +12,15 @@ import org.mapstruct.MappingTarget;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = CarMapper.class)
 public interface DriverMapper {
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "cars", source = "cars")
     Driver toDriver(DriverRequest driverRequest);
 
+    @Mapping(target = "id", source = "id")
     DriverResponse toDriverResponse(Driver driver);
 
     default List<Car> carRequestsToCars(List<CarRequest> carRequests) {
@@ -31,6 +34,8 @@ public interface DriverMapper {
                 .collect(Collectors.toList());
     }
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "cars", ignore = true)
     Driver updateDriverFromRequest(DriverRequest driverRequest, @MappingTarget Driver driver);
 }

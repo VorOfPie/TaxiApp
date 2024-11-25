@@ -8,6 +8,9 @@ Contract.make {
     request {
         method GET()
         url '/api/v1/drivers/999'
+        headers {
+            header('Authorization', $(producer(regex('Bearer .+'))))
+        }
     }
 
     response {

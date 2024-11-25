@@ -31,7 +31,7 @@ public class CarServiceImpl implements CarService {
     private final DriverRepository driverRepository;
 
     @Override
-   public Mono<CarResponse> getCarById(Long id, String principalEmail, boolean isAdmin) {
+    public Mono<CarResponse> getCarById(Long id, String principalEmail, boolean isAdmin) {
         log.info("Fetching car with ID: {}", id);
         return Mono.fromCallable(() -> carRepository.findByIdAndIsDeletedFalse(id)
                         .orElseThrow(() -> {
@@ -40,8 +40,10 @@ public class CarServiceImpl implements CarService {
                         }))
                 .subscribeOn(jdbcScheduler)
                 .map(car -> {
-                    if (!isAdmin && (car.getDriver() == null || !car.getDriver().getEmail().equals(principalEmail))) {
-                        throw new AccessDeniedException("You do not have permission to access this car.");
+                    if (!isAdmin) {
+                        if (car.getDriver() != null && !car.getDriver().getEmail().equals(principalEmail)) {
+                            throw new AccessDeniedException("You do not have permission to access this car.");
+                        }
                     }
                     return carMapper.toCarResponse(car);
                 });
@@ -73,8 +75,10 @@ public class CarServiceImpl implements CarService {
                     Car car = carRepository.findByIdAndIsDeletedFalse(id)
                             .orElseThrow(() -> new ResourceNotFoundException("Car with id: " + id + " not found"));
 
-                    if (!isAdmin && (car.getDriver() == null || !car.getDriver().getEmail().equals(principalEmail))) {
-                        throw new AccessDeniedException("You do not have permission to update this car.");
+                    if (!isAdmin) {
+                        if (car.getDriver() != null && !car.getDriver().getEmail().equals(principalEmail)) {
+                            throw new AccessDeniedException("You do not have permission to access this car.");
+                        }
                     }
 
                     carMapper.updateCarFromRequest(createCarRequest, car);
@@ -87,14 +91,16 @@ public class CarServiceImpl implements CarService {
     }
 
     @Override
-     public Mono<Void> deleteCar(Long id, String principalEmail, boolean isAdmin) {
+    public Mono<Void> deleteCar(Long id, String principalEmail, boolean isAdmin) {
         log.info("Deleting car with ID: {}", id);
         return Mono.fromRunnable(() -> {
                     Car car = carRepository.findByIdAndIsDeletedFalse(id)
                             .orElseThrow(() -> new ResourceNotFoundException("Car with id: " + id + " not found"));
 
-                    if (!isAdmin && (car.getDriver() == null || !car.getDriver().getEmail().equals(principalEmail))) {
-                        throw new AccessDeniedException("You do not have permission to delete this car.");
+                    if (!isAdmin) {
+                        if (car.getDriver() != null && !car.getDriver().getEmail().equals(principalEmail)) {
+                            throw new AccessDeniedException("You do not have permission to access this car.");
+                        }
                     }
                     car.setIsDeleted(true);
                     carRepository.save(car);

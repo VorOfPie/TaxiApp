@@ -1,19 +1,25 @@
 package com.modsen.taxi.driversrvice.driver;
 
+import com.modsen.taxi.driversrvice.AccessTokenProvider;
 import com.modsen.taxi.driversrvice.dto.request.CarRequest;
 import com.modsen.taxi.driversrvice.dto.request.DriverRequest;
 import com.modsen.taxi.driversrvice.dto.response.CarResponse;
 import com.modsen.taxi.driversrvice.dto.response.DriverResponse;
 import com.modsen.taxi.driversrvice.repository.CarRepository;
 import com.modsen.taxi.driversrvice.repository.DriverRepository;
+import dasniko.testcontainers.keycloak.KeycloakContainer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -27,46 +33,73 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
+@AutoConfigureWebTestClient
 public class DriverServiceIntegrationTest {
 
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16");
-
+    private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16");
+    private static final KeycloakContainer KEYCLOAK = new KeycloakContainer("quay.io/keycloak/keycloak:26.0")
+            .withRealmImportFile("/realm-export.json");
+    private WebTestClient client;
     @Autowired
     private DriverRepository driverRepository;
     @Autowired
     private CarRepository carRepository;
-
     @Autowired
-    private WebTestClient client;
+    private AccessTokenProvider accessTokenProvider;
+
+    private String userToken;
+    private String adminToken;
+    @LocalServerPort
+    private int port;
+
 
     @BeforeAll
-    static void beforeAll() {
-        postgres.start();
+    static void startContainers() {
+        POSTGRES.start();
+        KEYCLOAK.start();
     }
 
     @AfterAll
-    static void afterAll() {
-        postgres.stop();
+    static void stopContainers() {
+        POSTGRES.stop();
+        KEYCLOAK.stop();
     }
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
+        registry.add("spring.datasource.username", POSTGRES::getUsername);
+        registry.add("spring.datasource.password", POSTGRES::getPassword);
+
+        registry.add("keycloak.auth-server-url", KEYCLOAK::getAuthServerUrl);
+        registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri",
+                () -> KEYCLOAK.getAuthServerUrl() + "/realms/taxiapp-realm");
+        registry.add("spring.security.oauth2.client.provider.keycloak.issuer-uri",
+                () -> KEYCLOAK.getAuthServerUrl() + "/realms/taxiapp-realm");
+        registry.add("spring.security.oauth2.client.registration.keycloak.client-id",
+                () -> "taxiapp");
+        registry.add("spring.security.oauth2.client.registration.keycloak.client-secret",
+                () -> "Xbfrxu5jJRqzK0C36c0WPOCovoLRerO3");
     }
 
     @BeforeEach
-    void setupDb() {
+    void setup() {
+        client = WebTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port)
+                .build();
         carRepository.deleteAll();
         driverRepository.deleteAll();
+        userToken = accessTokenProvider.getAccessToken("user", "admin");
+        adminToken = accessTokenProvider.getAccessToken("admin", "admin");
     }
+
 
     @Test
     void createDriver_ShouldReturnDriverResponse_WhenDriverCreatedSuccessfully() {
         List<CarRequest> cars = List.of(new CarRequest(null, "Toyota", "Camry", "ABC123"));
 
-        DriverResponse createdDriver = postDriver(new DriverRequest("John", "Doe", "+1234567890", "Male", cars));
+        DriverResponse createdDriver = postDriver(new DriverRequest("John", "Doe", "+1234567890", "john.doe@example.com", "Male", cars));
 
         assertThat(createdDriver).isNotNull();
         assertThat(createdDriver.firstName()).isEqualTo("John");
@@ -74,15 +107,16 @@ public class DriverServiceIntegrationTest {
         assertThat(createdDriver.phone()).isEqualTo("+1234567890");
         assertThat(createdDriver.gender()).isEqualTo("Male");
         assertThat(createdDriver.cars()).hasSize(1);
-        assertThat(createdDriver.cars().get(0).licensePlate()).isEqualTo("ABC123");
+        assertThat(createdDriver.cars().getFirst().licensePlate()).isEqualTo("ABC123");
     }
 
     @Test
     void createDriver_ShouldReturnBadRequest_WhenInvalidPhoneNumberProvided() {
-        DriverRequest driverRequest = new DriverRequest("John", "Doe", "invalid-phone", "Male", List.of());
+        DriverRequest driverRequest = new DriverRequest("John", "Doe", "invalid-phone", "john.doe@example.com", "Male", List.of());
 
         client.post()
                 .uri("/api/v1/drivers")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(driverRequest)
                 .exchange()
@@ -93,11 +127,12 @@ public class DriverServiceIntegrationTest {
     void getDriverById_ShouldReturnDriverResponse_WhenDriverExists() {
         List<CarRequest> cars = List.of(new CarRequest(null, "Toyota", "Camry", "ABC123"));
 
-        DriverResponse createdDriver = postDriver(new DriverRequest("John", "Doe", "+1234567890", "Male", cars));
+        DriverResponse createdDriver = postDriver(new DriverRequest("John", "Doe", "+1234567890", "john.doe@example.com", "Male", cars));
 
         assertThat(createdDriver).isNotNull();
         client.get()
                 .uri("/api/v1/drivers/{id}", createdDriver.id())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
@@ -110,14 +145,53 @@ public class DriverServiceIntegrationTest {
                     assertThat(driverResponse.phone()).isEqualTo("+1234567890");
                     assertThat(driverResponse.gender()).isEqualTo("Male");
                     assertThat(driverResponse.cars()).hasSize(1);
-                    assertThat(driverResponse.cars().get(0).licensePlate()).isEqualTo("ABC123");
+                    assertThat(driverResponse.cars().getFirst().licensePlate()).isEqualTo("ABC123");
                 });
+    }
+
+    @Test
+    void getDriverById_ShouldReturnForbidden_WhenEmailNotMatch() {
+        List<CarRequest> cars1 = List.of(new CarRequest(null, "Toyota", "Camry", "ABC123"));
+        List<CarRequest> cars2 = List.of(new CarRequest(null, "NotToyota", "NotCamry", "CBA123"));
+
+        DriverRequest driver1 = new DriverRequest("John", "Doe", "+1234567890", "john.doe@example.com", "Male", cars1);
+        DriverRequest driver2 = new DriverRequest("Jane", "Doe", "+7876543210", "jane.doe@example.com", "Female", cars2);
+
+        postDriver(driver1);
+        DriverResponse createdDriver = postDriver(driver2);
+
+        client.get()
+                .uri("/api/v1/drivers/{id}", createdDriver.id())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk();
+    }
+
+    @Test
+    void getDriverById_ShouldReturnDriverResponse_WhenAdminAccess() {
+        List<CarRequest> cars1 = List.of(new CarRequest(null, "Toyota", "Camry", "ABC123"));
+        List<CarRequest> cars2 = List.of(new CarRequest(null, "NotToyota", "NotCamry", "CBA123"));
+
+        DriverRequest driver1 = new DriverRequest("John", "Doe", "+1234567890", "john.doe@example.com", "Male", cars1);
+        DriverRequest driver2 = new DriverRequest("Jane", "Doe", "+7876543210", "jane.doe@example.com", "Female", cars2);
+
+        postDriver(driver1);
+        postDriver(driver2);
+
+        client.get()
+                .uri("/api/v1/drivers/{id}", 2)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isNotFound();
     }
 
     @Test
     void getDriverById_ShouldReturnNotFound_WhenDriverDoesNotExist() {
         client.get()
                 .uri("/api/v1/drivers/{id}", 9999)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isNotFound();
@@ -127,13 +201,14 @@ public class DriverServiceIntegrationTest {
     void updateDriver_ShouldReturnUpdatedDriverResponse_WhenDriverExists() {
         List<CarRequest> cars = List.of(new CarRequest(null, "Toyota", "Camry", "ABC123"));
 
-        DriverResponse createdDriver = postDriver(new DriverRequest("John", "Doe", "+1234567890", "Male", cars));
+        DriverResponse createdDriver = postDriver(new DriverRequest("John", "Doe", "+1234567890", "john.doe@example.com", "Male", cars));
 
         List<CarRequest> updatedCars = List.of(new CarRequest(null, "Honda", "Accord", "DEF456"));
-        DriverRequest updatedDriverRequest = new DriverRequest("Jane", "Doe", "+9876543210", "Female", updatedCars);
+        DriverRequest updatedDriverRequest = new DriverRequest("Jane", "Doe", "+9876543210", "john.doe@example.com", "Female", updatedCars);
 
         DriverResponse updatedDriver = client.put()
                 .uri("/api/v1/drivers/{id}", createdDriver.id())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(updatedDriverRequest)
                 .exchange()
@@ -148,23 +223,25 @@ public class DriverServiceIntegrationTest {
         assertThat(updatedDriver.phone()).isEqualTo("+9876543210");
         assertThat(updatedDriver.gender()).isEqualTo("Female");
         assertThat(updatedDriver.cars()).hasSize(1);
-        assertThat(updatedDriver.cars().get(0).licensePlate()).isEqualTo("DEF456");
+        assertThat(updatedDriver.cars().getFirst().licensePlate()).isEqualTo("DEF456");
     }
 
     @Test
     void deleteDriver_ShouldMarkDriverAsDeleted_WhenDriverExists() {
         List<CarRequest> cars = List.of(new CarRequest(null, "Toyota", "Camry", "ABC123"));
 
-        DriverResponse createdDriver = postDriver(new DriverRequest("John", "Doe", "+1234567890", "Male", cars));
+        DriverResponse createdDriver = postDriver(new DriverRequest("John", "Doe", "+1234567890", "john.doe@example.com", "Male", cars));
 
         assert createdDriver != null;
         client.delete()
                 .uri("/api/v1/drivers/{id}", createdDriver.id())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
                 .exchange()
                 .expectStatus().isNoContent();
 
         client.get()
                 .uri("/api/v1/drivers/{id}", createdDriver.id())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isNotFound();
@@ -175,9 +252,9 @@ public class DriverServiceIntegrationTest {
         List<CarRequest> cars1 = List.of(new CarRequest(null, "Toyota", "Camry", "ABC123"));
         List<CarRequest> cars2 = List.of(new CarRequest(null, "NotToyota", "NotCamry", "CBA123"));
         List<CarRequest> cars3 = List.of(new CarRequest(null, "Toyota", "Camry", "ACB123"));
-        DriverRequest driver1 = new DriverRequest("John", "Doe", "+1234567890", "Male", cars1);
-        DriverRequest driver2 = new DriverRequest("Jane", "Doe", "+7876543210", "Female", cars2);
-        DriverRequest driver3 = new DriverRequest("Jack", "Smith", "+1122334455", "Male", cars3);
+        DriverRequest driver1 = new DriverRequest("John", "Doe", "+1234567890", "john.doe@example.com", "Male", cars1);
+        DriverRequest driver2 = new DriverRequest("Jane", "Doe", "+7876543210", "jane.doe@example.com", "Female", cars2);
+        DriverRequest driver3 = new DriverRequest("Jack", "Smith", "+1122334455", "jack.smith@example.com", "Male", cars3);
 
         postDriver(driver1);
         postDriver(driver2);
@@ -185,6 +262,7 @@ public class DriverServiceIntegrationTest {
 
         client.get()
                 .uri("/api/v1/drivers?lastName=Doe")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
@@ -201,6 +279,7 @@ public class DriverServiceIntegrationTest {
                                     (String) map.get("firstName"),
                                     (String) map.get("lastName"),
                                     (String) map.get("phone"),
+                                    (String) map.get("email"),
                                     (String) map.get("gender"),
                                     (List<CarResponse>) map.get("cars")
                             ))
@@ -217,16 +296,16 @@ public class DriverServiceIntegrationTest {
                 });
     }
 
-    private DriverResponse postDriver(DriverRequest driverRequest) {
+    private DriverResponse postDriver(DriverRequest request) {
         return client.post()
                 .uri("/api/v1/drivers")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(driverRequest)
+                .bodyValue(request)
                 .exchange()
                 .expectStatus().isCreated()
                 .expectBody(DriverResponse.class)
                 .returnResult()
                 .getResponseBody();
     }
-
 }

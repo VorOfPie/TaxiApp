@@ -1,5 +1,6 @@
 package com.modsen.taxi.driversrvice.car.stepdefs;
 
+import com.modsen.taxi.driversrvice.AccessTokenProvider;
 import com.modsen.taxi.driversrvice.dto.request.CreateCarRequest;
 import com.modsen.taxi.driversrvice.dto.response.CarResponse;
 import io.cucumber.java.en.Given;
@@ -7,6 +8,8 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -15,7 +18,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class DeleteCarSteps {
 
     @Autowired
+    private AccessTokenProvider accessTokenProvider;
+
+    @Autowired
     private WebTestClient client;
+
+    private String userToken;
+
+    @LocalServerPort
+    private int port;
 
     private CarResponse createdCarResponse;
     private WebTestClient.ResponseSpec responseSpec;
@@ -24,6 +35,7 @@ public class DeleteCarSteps {
     @Transactional
     public void theCarExists(String licensePlate) {
         CreateCarRequest carRequest = new CreateCarRequest("Toyota", "White", licensePlate);
+        configureWebClient();
         createdCarResponse = postCar(carRequest);
         assertThat(createdCarResponse).isNotNull();
     }
@@ -32,6 +44,7 @@ public class DeleteCarSteps {
     public void iDeleteTheCar(String licensePlate) {
         responseSpec = client.delete()
                 .uri("/api/v1/cars/{id}", createdCarResponse.id())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
                 .exchange();
     }
 
@@ -41,6 +54,7 @@ public class DeleteCarSteps {
 
         client.get()
                 .uri("/api/v1/cars/{id}", createdCarResponse.id())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isNotFound();
@@ -48,8 +62,10 @@ public class DeleteCarSteps {
 
     @When("I try to delete a car with id {int}")
     public void iTryToDeleteACarWithId(int id) {
+        configureWebClient();
         responseSpec = client.delete()
                 .uri("/api/v1/cars/{id}", id)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
                 .exchange();
     }
 
@@ -61,6 +77,7 @@ public class DeleteCarSteps {
     private CarResponse postCar(CreateCarRequest carRequest) {
         return client.post()
                 .uri("/api/v1/cars")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(carRequest)
                 .exchange()
@@ -68,5 +85,12 @@ public class DeleteCarSteps {
                 .expectBody(CarResponse.class)
                 .returnResult()
                 .getResponseBody();
+    }
+
+    private void configureWebClient() {
+        client = WebTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port)
+                .build();
+        userToken = accessTokenProvider.getAccessToken("user", "admin");
     }
 }

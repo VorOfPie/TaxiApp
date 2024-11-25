@@ -4,7 +4,6 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:8085/realms/taxiapp-realm
-
       client:
         provider:
           keycloak:
@@ -22,7 +21,6 @@ spring:
     username: username
     password: password
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: none
@@ -30,55 +28,19 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-
   liquibase:
     change-log: db/changelog/main-changelog.xml
     enabled: true
 server:
   port: 7002
+
 eureka:
   client:
-    serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
-    initialInstanceInfoReplicationIntervalSeconds: 5
-    registryFetchIntervalSeconds: 5
+    enabled: false
   instance:
-    preferIpAddress: true
-    leaseRenewalIntervalInSeconds: 5
-    leaseExpirationDurationInSeconds: 5
+    enabled: false
 
-driver:
-  scheduler:
-    threadPoolSize: 15
-    taskQueueSize: 100
-
-
----
-spring.config.activate.on-profile: docker
-server.port: 8080
-
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,prometheus
-  endpoint:
-    prometheus:
-      enabled: true
-    health:
-      show-details: always
-  prometheus:
-    metrics:
-      export:
-        enabled: true
-  tracing:
-    sampling:
-      probability: 1
-    enabled: true
-
-logging:
-  level:
-    root: INFO
-  pattern:
-    console: '{"timestamp":"%d{yyyy-MM-dd HH:mm:ss.SSS}", "level":"%p", "thread":"%t", "traceId":"%X{traceId}", "spanId":"%X{spanId}", "message":"%msg"}'
+keycloak:
+  client-secret: Xbfrxu5jJRqzK0C36c0WPOCovoLRerO3
+  client-id: taxiapp
+  auth-server-url: localhost:8085

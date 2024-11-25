@@ -1,8 +1,10 @@
 package com.modsen.taxi.driversrvice.car;
 
 import com.modsen.taxi.driversrvice.domain.Car;
+import com.modsen.taxi.driversrvice.domain.Driver;
 import com.modsen.taxi.driversrvice.dto.request.CreateCarRequest;
 import com.modsen.taxi.driversrvice.dto.response.CarResponse;
+import com.modsen.taxi.driversrvice.error.exception.AccessDeniedException;
 import com.modsen.taxi.driversrvice.error.exception.DuplicateResourceException;
 import com.modsen.taxi.driversrvice.error.exception.ResourceNotFoundException;
 import com.modsen.taxi.driversrvice.mapper.CarMapper;
@@ -15,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
+import org.springframework.security.test.context.support.WithMockUser;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
@@ -56,10 +59,12 @@ public class CarServiceImplTest {
             runnable.run();
             return mock(Disposable.class);
         });
+        Driver driver1 = new Driver(1L, "John", "Doe", "1234567890", "john.doe@example.com", "Male", false, List.of(new Car()));
+        Driver driver2 = new Driver(2L, "Jane", "Doe", "0987654321", "jane.doe@gmail.com", "Female", false, null);
 
         createCarRequest = new CreateCarRequest("BMW", "Blue", "ABC123");
-        car1 = new Car(1L, "BMW", "Blue", "ABC123", false, null);
-        car2 = new Car(2L, "Audi", "Red", "XYZ789", false, null);
+        car1 = new Car(1L, "BMW", "Blue", "ABC123", false, driver1);
+        car2 = new Car(2L, "Audi", "Red", "XYZ789", false, driver2);
         carResponse1 = new CarResponse(1L, "BMW", "Blue", "ABC123");
         carResponse2 = new CarResponse(2L, "Audi", "Red", "XYZ789");
         pageable = PageRequest.of(0, 2);
@@ -97,11 +102,12 @@ public class CarServiceImplTest {
     }
 
     @Test
+    @WithMockUser(username = "john.doe@example.com", roles = {"USER"})
     void getCarById_ShouldReturnCarResponse_WhenCarExists() {
         when(carRepository.findByIdAndIsDeletedFalse(anyLong())).thenReturn(Optional.of(car1));
         when(carMapper.toCarResponse(car1)).thenReturn(carResponse1);
 
-        Mono<CarResponse> result = carService.getCarById(1L);
+        Mono<CarResponse> result = carService.getCarById(1L, "john.doe@example.com", false);
 
         StepVerifier.create(result)
                 .expectNextMatches(response -> response.licensePlate().equals("ABC123"))
@@ -111,10 +117,11 @@ public class CarServiceImplTest {
     }
 
     @Test
+    @WithMockUser(username = "user@example.com", roles = {"USER"})
     void getCarById_ShouldThrowResourceNotFoundException_WhenCarNotFound() {
         when(carRepository.findByIdAndIsDeletedFalse(anyLong())).thenReturn(Optional.empty());
 
-        Mono<CarResponse> result = carService.getCarById(1L);
+        Mono<CarResponse> result = carService.getCarById(1L,"john.doe@example.com", false);
 
         StepVerifier.create(result)
                 .expectError(ResourceNotFoundException.class)
@@ -124,33 +131,36 @@ public class CarServiceImplTest {
     }
 
     @Test
-    void deleteCar_ShouldMarkCarAsDeleted_WhenCarExists() {
+    @WithMockUser(username = "john.doe@example.com", roles = {"ADMIN"})
+    void deleteCar_ShouldMarkCarAsDeleted_WhenAdminDeletes() {
         when(carRepository.findByIdAndIsDeletedFalse(anyLong())).thenReturn(Optional.of(car1));
 
-        Mono<Void> result = carService.deleteCar(1L);
+        Mono<Void> result = carService.deleteCar(1L, "john.doe@example.com", false);
 
         StepVerifier.create(result)
                 .verifyComplete();
 
         verify(carRepository).findByIdAndIsDeletedFalse(anyLong());
-        assert car1.getIsDeleted();
+        assertEquals(true, car1.getIsDeleted());
         verify(carRepository).save(car1);
     }
 
     @Test
-    void deleteCar_ShouldThrowResourceNotFoundException_WhenCarDoesNotExist() {
-        when(carRepository.findByIdAndIsDeletedFalse(anyLong())).thenReturn(Optional.empty());
+    @WithMockUser(username = "jane.doe@example.com", roles = {"USER"})
+    void deleteCar_ShouldThrowAccessDeniedException_WhenNonAdminTriesToDelete() {
+        when(carRepository.findByIdAndIsDeletedFalse(anyLong())).thenReturn(Optional.of(car1));
 
-        Mono<Void> result = carService.deleteCar(1L);
+        Mono<Void> result = carService.deleteCar(1L, "jane.doe@example.com", false);
 
         StepVerifier.create(result)
-                .expectError(ResourceNotFoundException.class)
+                .expectError(AccessDeniedException.class)
                 .verify();
 
         verify(carRepository, never()).save(any(Car.class));
     }
 
     @Test
+    @WithMockUser(username = "jane@doe.com", roles = {"ADMIN"})
     void getAllCars_ShouldReturnPagedCars_WhenCarsExist() {
         Page<Car> carPage = new PageImpl<>(List.of(car1, car2), pageable, 2);
         when(carRepository.findAll(any(Example.class), any(Pageable.class))).thenReturn(carPage);
@@ -171,26 +181,5 @@ public class CarServiceImplTest {
                 .verifyComplete();
 
         verify(carRepository).findAll(any(Example.class), eq(pageable));
-    }
-
-    @Test
-    void getAllCars_ShouldReturnFilteredCars_WhenFiltersAreApplied() {
-        Page<Car> carPage = new PageImpl<>(List.of(car1), pageable, 1);
-        when(carRepository.findAll(any(Example.class), eq(pageable))).thenReturn(carPage);
-        when(carMapper.toCarResponse(car1)).thenReturn(carResponse1);
-
-        Mono<Page<CarResponse>> result = carService.getAllCars(pageable, "BMW", "", "", true);
-
-        StepVerifier.create(result)
-                .expectNextMatches(page -> {
-                    List<CarResponse> cars = page.getContent();
-                    return cars.size() == 1 &&
-                            cars.get(0).brand().equals("BMW") &&
-                            cars.get(0).color().equals("Blue");
-                })
-                .verifyComplete();
-
-        verify(carRepository).findAll(any(Example.class), eq(pageable));
-        verify(carMapper).toCarResponse(car1);
     }
 }

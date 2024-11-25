@@ -1,5 +1,6 @@
 package com.modsen.taxi.driversrvice.driver.stepdefs;
 
+import com.modsen.taxi.driversrvice.AccessTokenProvider;
 import com.modsen.taxi.driversrvice.dto.request.DriverRequest;
 import com.modsen.taxi.driversrvice.dto.response.DriverResponse;
 import com.modsen.taxi.driversrvice.repository.CarRepository;
@@ -8,6 +9,8 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -23,7 +26,12 @@ public class CreateDriverSteps {
     private CarRepository carRepository;
 
     @Autowired
+    AccessTokenProvider accessTokenProvider;
+    @Autowired
     private WebTestClient client;
+    private String userToken;
+    @LocalServerPort
+    private int port;
 
     private DriverResponse createdDriverResponse;
     private WebTestClient.ResponseSpec responseSpec;
@@ -38,13 +46,14 @@ public class CreateDriverSteps {
     public void theDriverDoesNotExist(String phoneNumber) {
         driverRepository.deleteByPhone(phoneNumber);
     }
-
-    @When("I create a driver with first name {string}, last name {string}, phone number {string}, gender {string}")
-    public void iCreateDriver(String firstName, String lastName, String phoneNumber, String gender) {
-        DriverRequest driverRequest = new DriverRequest(firstName, lastName, phoneNumber, gender, List.of());
+    @When("I create a driver with first name {string}, last name {string}, phone number {string}, email {string}, gender {string}")
+    public void iCreateDriver(String firstName, String lastName, String phoneNumber, String email, String gender) {
+        DriverRequest driverRequest = new DriverRequest(firstName, lastName, phoneNumber,email, gender, List.of());
+        configureWebClient();
 
         responseSpec = client.post()
                 .uri("/api/v1/drivers")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(driverRequest)
                 .exchange();
@@ -62,15 +71,24 @@ public class CreateDriverSteps {
         assertThat(createdDriverResponse.phone()).isEqualTo(phoneNumber);
     }
 
-    @When("I create a driver with invalid phone and first name {string}, last name {string}, phone number {string}, gender {string}")
-    public void iCreateDriverWithInvalidPhone(String firstName, String lastName, String phoneNumber, String gender) {
-        DriverRequest driverRequest = new DriverRequest(firstName, lastName, phoneNumber, gender, List.of());
+    @When("I create a driver with invalid phone and first name {string}, last name {string}, phone number {string}, email {string}, gender {string}")
+    public void iCreateDriverWithInvalidPhone(String firstName, String lastName, String phoneNumber,String email, String gender) {
+        DriverRequest driverRequest = new DriverRequest(firstName, lastName, phoneNumber,email, gender, List.of());
+        configureWebClient();
 
         responseSpec = client.post()
                 .uri("/api/v1/drivers")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(driverRequest)
                 .exchange();
+    }
+
+    private void configureWebClient() {
+        client = WebTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port)
+                .build();
+        userToken = accessTokenProvider.getAccessToken("user", "admin");
     }
 
     @Then("an error should be returned indicating the phone number is invalid")

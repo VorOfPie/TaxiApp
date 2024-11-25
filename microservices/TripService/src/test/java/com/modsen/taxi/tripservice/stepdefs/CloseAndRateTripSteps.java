@@ -42,7 +42,6 @@ public class CloseAndRateTripSteps {
     @Autowired
     private EmbeddedKafkaBroker embeddedKafkaBroker;
 
-    // Store the trip ID here
     private Long tripId;
 
     @Given("a trip with driverId {long}, passengerId {long}, origin {string}, and destination {string} exists")
@@ -50,7 +49,6 @@ public class CloseAndRateTripSteps {
         TripRequest tripRequest = new TripRequest(driverId, passengerId, origin, destination, "CREATED",
                 LocalDateTime.now(), new BigDecimal("50.00"));
 
-        // Create the trip and capture the response
         MvcResult result = mockMvc.perform(post("/api/v1/trips")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(tripRequest)))
