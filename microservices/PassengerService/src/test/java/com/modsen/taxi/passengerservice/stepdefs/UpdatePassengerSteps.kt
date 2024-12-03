@@ -1,5 +1,6 @@
 package com.modsen.taxi.passengerservice.stepdefs
 
+import com.modsen.taxi.passengerservice.AccessTokenProvider
 import com.modsen.taxi.passengerservice.dto.PassengerRequest
 import com.modsen.taxi.passengerservice.dto.PassengerResponse
 import com.modsen.taxi.passengerservice.repository.PassengerRepository
@@ -11,24 +12,33 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.assertj.core.api.Assertions.assertThat
+import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.http.HttpHeaders
 
-class UpdatePassengerSteps {
+open class UpdatePassengerSteps {
 
     @Autowired
     private lateinit var passengerRepository: PassengerRepository
 
     @Autowired
+    private lateinit var accessTokenProvider: AccessTokenProvider
     private lateinit var client: WebTestClient
+    private lateinit var userToken: String
+
+    @LocalServerPort
+    private var port: Int = 0
 
     private var createdPassengerResponse: PassengerResponse? = null
     private lateinit var responseSpec: WebTestClient.ResponseSpec
 
     @Given("the passenger with email {string} exists")
     @Transactional
-    fun thePassengerExists(email: String) {
+    open fun thePassengerExists(email: String) {
         val passengerRequest = PassengerRequest("Sasha", "Kamenb", email, "123456789")
+        configureWebClient()
         createdPassengerResponse = client.post()
             .uri("/api/v1/passengers")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(passengerRequest)
             .exchange()
@@ -41,9 +51,11 @@ class UpdatePassengerSteps {
     @When("I update the passenger with first name {string}, last name {string}, email {string}, phone {string}")
     fun iUpdatePassenger(firstName: String, lastName: String, email: String, phone: String) {
         val updatedPassengerRequest = PassengerRequest(firstName, lastName, email, phone)
+        configureWebClient()
 
         responseSpec = client.put()
             .uri("/api/v1/passengers/{id}", createdPassengerResponse?.id)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(updatedPassengerRequest)
             .exchange()
@@ -69,8 +81,10 @@ class UpdatePassengerSteps {
     @When("I try to update a passenger with id {int} and first name {string}, last name {string}, email {string}, phone {string}")
     fun iTryToUpdatePassengerWithId(id: Int, firstName: String, lastName: String, email: String, phone: String) {
         val updatedPassengerRequest = PassengerRequest(firstName, lastName, email, phone)
+        configureWebClient()
         responseSpec = client.put()
             .uri("/api/v1/passengers/{id}", id)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(updatedPassengerRequest)
             .exchange()
@@ -79,5 +93,12 @@ class UpdatePassengerSteps {
     @Then("an error should be returned indicating the passenger does not exist for update")
     fun errorShouldBeReturnedForNonExistentPassenger() {
         responseSpec.expectStatus().isNotFound
+    }
+
+    private fun configureWebClient() {
+        client = WebTestClient.bindToServer()
+            .baseUrl("http://localhost:$port")
+            .build()
+        userToken = accessTokenProvider.getAccessToken("user", "admin")
     }
 }

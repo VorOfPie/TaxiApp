@@ -1,5 +1,6 @@
 package com.modsen.taxi.passengerservice.stepdefs
 
+import com.modsen.taxi.passengerservice.AccessTokenProvider
 import com.modsen.taxi.passengerservice.dto.PassengerRequest
 import com.modsen.taxi.passengerservice.dto.PassengerResponse
 import com.modsen.taxi.passengerservice.repository.PassengerRepository
@@ -9,8 +10,11 @@ import io.cucumber.java.en.When
 import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
+
 
 open class CreatePassengerSteps {
 
@@ -18,7 +22,12 @@ open class CreatePassengerSteps {
     private lateinit var passengerRepository: PassengerRepository
 
     @Autowired
+    private lateinit var accessTokenProvider: AccessTokenProvider
     private lateinit var client: WebTestClient
+    private lateinit var userToken: String
+
+    @LocalServerPort
+    private var port: Int = 0
 
     private var createdPassengerResponse: PassengerResponse? = null
     private lateinit var responseSpec: WebTestClient.ResponseSpec
@@ -37,9 +46,10 @@ open class CreatePassengerSteps {
     @When("I create a passenger with first name {string}, last name {string}, email {string}, phone {string}")
     fun iCreatePassenger(firstName: String, lastName: String, email: String, phone: String) {
         val passengerRequest = PassengerRequest(firstName, lastName, email, phone)
-
+        configureWebClient()
         responseSpec = client.post()
             .uri("/api/v1/passengers")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(passengerRequest)
             .exchange()
@@ -60,9 +70,11 @@ open class CreatePassengerSteps {
     @When("I try to create a passenger with duplicate email {string}")
     fun iTryToCreatePassengerWithDuplicateEmail(email: String) {
         val passengerRequest = PassengerRequest("Sasha", "Kamenb", email, "1234567890")
+        configureWebClient()
 
         responseSpec = client.post()
             .uri("/api/v1/passengers")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(passengerRequest)
             .exchange()
@@ -71,5 +83,12 @@ open class CreatePassengerSteps {
     @Then("an error should be returned indicating the email is already in use")
     fun errorShouldBeReturned() {
         responseSpec.expectStatus().is4xxClientError
+    }
+
+    private fun configureWebClient() {
+        client = WebTestClient.bindToServer()
+            .baseUrl("http://localhost:$port")
+            .build()
+        userToken = accessTokenProvider.getAccessToken("user", "admin")
     }
 }

@@ -1,5 +1,6 @@
 package com.modsen.taxi.passengerservice.stepdefs
 
+import com.modsen.taxi.passengerservice.AccessTokenProvider
 import com.modsen.taxi.passengerservice.dto.PassengerRequest
 import com.modsen.taxi.passengerservice.dto.PassengerResponse
 import io.cucumber.java.en.Given
@@ -7,14 +8,21 @@ import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 import java.util.LinkedHashMap
 
-class GetPassengersPaginationSteps {
+open class GetPassengersPaginationSteps {
 
     @Autowired
+    private lateinit var accessTokenProvider: AccessTokenProvider
     private lateinit var client: WebTestClient
+    private lateinit var adminToken: String
+
+    @LocalServerPort
+    private var port: Int = 0
 
     private lateinit var responseBody: Map<String, Any>
 
@@ -33,6 +41,7 @@ class GetPassengersPaginationSteps {
 
     @When("I get passengers filtered by first name {string} with page {int} and size {int}")
     fun iGetPassengersFilteredByFirstNameWithPagination(firstName: String, page: Int, size: Int) {
+        configureWebClient()
         responseBody = client.get()
             .uri { uriBuilder ->
                 uriBuilder
@@ -42,6 +51,7 @@ class GetPassengersPaginationSteps {
                     .queryParam("size", size)
                     .build()
             }
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
@@ -81,6 +91,7 @@ class GetPassengersPaginationSteps {
     private fun postPassenger(passengerRequest: PassengerRequest): PassengerResponse {
         return client.post()
             .uri("/api/v1/passengers")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(passengerRequest)
             .exchange()
@@ -89,4 +100,11 @@ class GetPassengersPaginationSteps {
             .returnResult()
             .responseBody!!
     }
+    private fun configureWebClient() {
+        client = WebTestClient.bindToServer()
+            .baseUrl("http://localhost:$port")
+            .build()
+        adminToken = accessTokenProvider.getAccessToken("admin", "admin")
+    }
+
 }

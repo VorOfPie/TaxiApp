@@ -1,5 +1,6 @@
 package com.modsen.taxi.passengerservice.stepdefs
 
+import com.modsen.taxi.passengerservice.AccessTokenProvider
 import com.modsen.taxi.passengerservice.dto.PassengerRequest
 import com.modsen.taxi.passengerservice.dto.PassengerResponse
 import io.cucumber.java.en.Given
@@ -8,13 +9,20 @@ import io.cucumber.java.en.When
 import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 
-class GetPassengerByIdSteps {
+open class GetPassengerByIdSteps {
 
     @Autowired
+    private lateinit var accessTokenProvider: AccessTokenProvider
     private lateinit var client: WebTestClient
+    private lateinit var userToken: String
+
+    @LocalServerPort
+    private var port: Int = 0
 
     private var createdPassengerResponse: PassengerResponse? = null
     private lateinit var responseSpec: WebTestClient.ResponseSpec
@@ -22,7 +30,7 @@ class GetPassengerByIdSteps {
 
     @Given("the passenger with email {string} exists to get")
     @Transactional
-    fun thePassengerExists(email: String) {
+    open fun thePassengerExists(email: String) {
         val passengerRequest = PassengerRequest("Alice", "Smith", email, "+1234567890")
         createdPassengerResponse = postPassenger(passengerRequest)
         assertThat(createdPassengerResponse).isNotNull
@@ -31,8 +39,10 @@ class GetPassengerByIdSteps {
     @When("I get the passenger with ID")
     fun iGetThePassengerWithId() {
         val id = createdPassengerResponse?.id
+        configureWebClient()
         responseSpec = client.get()
             .uri("/api/v1/passengers/{id}", id)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
     }
@@ -69,8 +79,10 @@ class GetPassengerByIdSteps {
 
     @When("I try to get a passenger with ID {int}")
     fun iTryToGetAPassengerWithId(id: Int) {
+        configureWebClient()
         responseSpec = client.get()
             .uri("/api/v1/passengers/{id}", id)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
     }
@@ -81,8 +93,10 @@ class GetPassengerByIdSteps {
     }
 
     private fun postPassenger(passengerRequest: PassengerRequest): PassengerResponse {
+        configureWebClient()
         return client.post()
             .uri("/api/v1/passengers")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(passengerRequest)
             .exchange()
@@ -91,4 +105,11 @@ class GetPassengerByIdSteps {
             .returnResult()
             .responseBody!!
     }
+    private fun configureWebClient() {
+        client = WebTestClient.bindToServer()
+            .baseUrl("http://localhost:$port")
+            .build()
+        userToken = accessTokenProvider.getAccessToken("user", "admin")
+    }
+
 }

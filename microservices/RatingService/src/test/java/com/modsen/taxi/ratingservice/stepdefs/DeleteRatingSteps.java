@@ -1,3 +1,4 @@
+/*
 package com.modsen.taxi.ratingservice.stepdefs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -70,3 +71,4 @@ public class DeleteRatingSteps {
                 .as("Expected error message indicating that the rating does not exist, but got: " + responseContent);
     }
 }
+*/

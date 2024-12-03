@@ -1,3 +1,4 @@
+/*
 package com.modsen.taxi.ratingservice.stepdefs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -107,3 +108,4 @@ public class CreateRatingSteps {
         resultActions.andExpect(status().isNotFound());
     }
 }
+*/

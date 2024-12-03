@@ -71,8 +71,17 @@ spring:
       on-profile: docker
   kafka:
     bootstrap-servers: kafka:9092
-server.port: 8080
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8080/realms/taxiapp-realm
 
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://keycloak:8080/realms/taxiapp-realm
+server.port: 8080
 management:
   endpoints:
     web:

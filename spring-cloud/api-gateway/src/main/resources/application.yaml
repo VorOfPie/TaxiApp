@@ -89,3 +89,9 @@ resilience4j:
         slidingWindowSize: 10
         failureRateThreshold: 50
         waitDurationInOpenState: 10s
+
+
+
+---
+spring.config.activate.on-profile: docker
+server.port: 8080

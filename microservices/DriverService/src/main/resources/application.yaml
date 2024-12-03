@@ -57,7 +57,17 @@ driver:
 spring.config.activate.on-profile: docker
 server.port: 8080
 
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8080/realms/taxiapp-realm
 
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://keycloak:8080/realms/taxiapp-realm
 management:
   endpoints:
     web:
@@ -77,8 +87,8 @@ management:
       probability: 1
     enabled: true
 
-logging:
-  level:
-    root: INFO
-  pattern:
-    console: '{"timestamp":"%d{yyyy-MM-dd HH:mm:ss.SSS}", "level":"%p", "thread":"%t", "traceId":"%X{traceId}", "spanId":"%X{spanId}", "message":"%msg"}'
+#logging:
+#  level:
+#    root: INFO
+#  pattern:
+#    console: '{"timestamp":"%d{yyyy-MM-dd HH:mm:ss.SSS}", "level":"%p", "thread":"%t", "traceId":"%X{traceId}", "spanId":"%X{spanId}", "message":"%msg"}'

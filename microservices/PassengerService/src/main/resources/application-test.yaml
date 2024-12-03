@@ -1,0 +1,54 @@
+spring:
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8085/realms/taxiapp-realm
+
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8085/realms/taxiapp-realm
+            user-name-attribute: preferred_username
+        registration:
+          keycloak:
+            client-id: taxiapp
+            client-secret: Xbfrxu5jJRqzK0C36c0WPOCovoLRerO3
+            scope: openid
+  application:
+    name: passenger-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/passenger_db
+    username: username
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+
+  liquibase:
+    change-log: db/changelog/main-changelog.xml
+    enabled: true
+
+
+passenger:
+  scheduler:
+    threadPoolSize: 10
+    taskQueueSize: 100
+
+
+eureka:
+  client:
+    enabled: false
+  instance:
+    enabled: false
+
+keycloak:
+  client-secret: Xbfrxu5jJRqzK0C36c0WPOCovoLRerO3
+  client-id: taxiapp
+  auth-server-url: localhost:8085

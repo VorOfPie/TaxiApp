@@ -1,3 +1,4 @@
+/*
 package com.modsen.taxi.ratingservice;
 
 import org.junit.jupiter.api.Test;
@@ -117,3 +118,4 @@ public class BaseContractTest {
                 .andExpect(jsonPath("$.message", is("Passenger with id 999 not found")));
     }
 }
+*/

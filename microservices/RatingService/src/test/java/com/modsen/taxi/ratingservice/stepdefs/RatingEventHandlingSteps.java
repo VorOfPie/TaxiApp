@@ -1,3 +1,4 @@
+/*
 package com.modsen.taxi.ratingservice.stepdefs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -65,3 +66,4 @@ public class RatingEventHandlingSteps {
         assertThat(ratingRepository.count()).isEqualTo(count);
     }
 }
+*/

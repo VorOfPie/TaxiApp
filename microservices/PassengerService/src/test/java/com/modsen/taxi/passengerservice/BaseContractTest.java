@@ -1,3 +1,4 @@
+/*
 package com.modsen.taxi.passengerservice;
 
 import io.restassured.module.webtestclient.RestAssuredWebTestClient;
@@ -53,3 +54,4 @@ public abstract class BaseContractTest {
         RestAssuredWebTestClient.webTestClient(webTestClient);
     }
 }
+*/

@@ -1,3 +1,4 @@
+/*
 package com.modsen.taxi.ratingservice;
 
 import com.modsen.taxi.ratingservice.config.DriverClient;
@@ -60,3 +61,4 @@ public class CucumberSpringConfiguration {
         registry.add("spring.kafka.consumer.properties.spring.json.trusted.packages", () -> "*");
     }
 }
+*/

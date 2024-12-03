@@ -1,5 +1,4 @@
 spring:
-
   security:
     oauth2:
       resourceserver:
@@ -61,7 +60,23 @@ passenger:
 ---
 spring.config.activate.on-profile: docker
 server.port: 8080
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8080/realms/taxiapp-realm
 
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://keycloak:8080/realms/taxiapp-realm
+            user-name-attribute: preferred_username
+        registration:
+          keycloak:
+            client-id: taxiapp
+            client-secret: Xbfrxu5jJRqzK0C36c0WPOCovoLRerO3
+            scope: openid
 management:
   endpoints:
     web:

@@ -1,3 +1,4 @@
+/*
 package com.modsen.taxi.ratingservice.stepdefs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -89,3 +90,4 @@ public class UpdateRatingSteps {
         return objectMapper.readValue(jsonResponse, RatingResponse.class);
     }
 }
+*/

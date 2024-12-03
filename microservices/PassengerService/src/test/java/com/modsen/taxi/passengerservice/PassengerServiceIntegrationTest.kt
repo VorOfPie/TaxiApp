@@ -3,6 +3,7 @@ package com.modsen.taxi.passengerservice
 import com.modsen.taxi.passengerservice.dto.PassengerRequest
 import com.modsen.taxi.passengerservice.dto.PassengerResponse
 import com.modsen.taxi.passengerservice.repository.PassengerRepository
+import dasniko.testcontainers.keycloak.KeycloakContainer
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -10,29 +11,37 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.testcontainers.containers.PostgreSQLContainer
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
 class PassengerServiceIntegrationTest {
 
     companion object {
         val postgres = PostgreSQLContainer<Nothing>("postgres:16")
+        val keycloak = KeycloakContainer("quay.io/keycloak/keycloak:26.0")
+            .withRealmImportFile("/realm-export.json")
 
         @JvmStatic
         @BeforeAll
         fun beforeAll() {
             postgres.start()
+            keycloak.start()
         }
 
         @JvmStatic
         @AfterAll
         fun afterAll() {
             postgres.stop()
+            keycloak.stop()
         }
 
         @JvmStatic
@@ -41,6 +50,16 @@ class PassengerServiceIntegrationTest {
             registry.add("spring.datasource.url", postgres::getJdbcUrl)
             registry.add("spring.datasource.username", postgres::getUsername)
             registry.add("spring.datasource.password", postgres::getPassword)
+
+            registry.add("keycloak.auth-server-url", keycloak::getAuthServerUrl)
+            registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri") {
+                "${keycloak.authServerUrl}/realms/taxiapp-realm"
+            }
+            registry.add("spring.security.oauth2.client.provider.keycloak.issuer-uri") {
+                "${keycloak.authServerUrl}/realms/taxiapp-realm"
+            }
+            registry.add("spring.security.oauth2.client.registration.keycloak.client-id") { "taxiapp" }
+            registry.add("spring.security.oauth2.client.registration.keycloak.client-secret") { "Xbfrxu5jJRqzK0C36c0WPOCovoLRerO3" }
         }
     }
 
@@ -48,11 +67,24 @@ class PassengerServiceIntegrationTest {
     private lateinit var passengerRepository: PassengerRepository
 
     @Autowired
+    private lateinit var accessTokenProvider: AccessTokenProvider
+
     private lateinit var client: WebTestClient
+    private lateinit var userToken: String
+    private lateinit var adminToken: String
+
+    @LocalServerPort
+    private var port: Int = 0
 
     @BeforeEach
     fun setupDb() {
+        client = WebTestClient.bindToServer()
+            .baseUrl("http://localhost:${port}")
+            .build()
         passengerRepository.deleteAll()
+        userToken = accessTokenProvider.getAccessToken("user", "admin")
+        adminToken = accessTokenProvider.getAccessToken("admin", "admin")
+
     }
 
     @Test
@@ -75,6 +107,7 @@ class PassengerServiceIntegrationTest {
 
         client.post()
             .uri("/api/v1/passengers")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(passengerRequest)
             .exchange()
@@ -89,6 +122,7 @@ class PassengerServiceIntegrationTest {
         assertThat(createdPassenger).isNotNull
         client.get()
             .uri("/api/v1/passengers/{id}", createdPassenger?.id)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
@@ -107,9 +141,23 @@ class PassengerServiceIntegrationTest {
     fun `getPassengerById should return not found when passenger does not exist`() {
         client.get()
             .uri("/api/v1/passengers/{id}", 9999)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `getPassengerById should return forbidden when user email in token does not match requested user email`() {
+        postPassenger(PassengerRequest("John", "Doe", "john.doe@example.com", "+1234567891"))
+        val passengerResponse2 = postPassenger(PassengerRequest("Bob", "Johnson", "bob.johnson@example.com", "+1234567892"))
+
+        client.get()
+            .uri("/api/v1/passengers/{id}", passengerResponse2!!.id)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isForbidden
     }
 
     @Test
@@ -121,6 +169,7 @@ class PassengerServiceIntegrationTest {
 
         val updatedPassenger = client.put()
             .uri("/api/v1/passengers/{id}", createdPassenger?.id)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(updatedPassengerRequest)
             .exchange()
@@ -137,15 +186,32 @@ class PassengerServiceIntegrationTest {
     }
 
     @Test
-    fun `updatePassenger should return not found when passenger does not exist`() {
+    fun `updatePassenger return forbidden when user email in token does not match requested user email`() {
         val updatedPassengerRequest = PassengerRequest("John", "Doe", "john.doe@example.com", "+1234567890")
 
         client.put()
             .uri("/api/v1/passengers/{id}", 9999)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(updatedPassengerRequest)
             .exchange()
             .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `updatePassenger should return forbidden when passenger does not exist`() {
+        postPassenger(PassengerRequest("John", "Doe", "john.doe@example.com", "+1234567891"))
+        val passengerResponse2 = postPassenger(PassengerRequest("Bob", "Johnson", "bob.johnson@example.com", "+1234567892"))
+
+        val updatedPassengerRequest = PassengerRequest("John", "Doe", "john.doe@example.com", "+1234567890")
+
+        client.put()
+            .uri("/api/v1/passengers/{id}", passengerResponse2!!.id)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(updatedPassengerRequest)
+            .exchange()
+            .expectStatus().isForbidden
     }
 
     @Test
@@ -156,11 +222,13 @@ class PassengerServiceIntegrationTest {
         assertThat(createdPassenger).isNotNull
         client.delete()
             .uri("/api/v1/passengers/{id}", createdPassenger?.id)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
             .exchange()
             .expectStatus().isNoContent
 
         client.get()
             .uri("/api/v1/passengers/{id}", createdPassenger?.id)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isNotFound
@@ -170,8 +238,21 @@ class PassengerServiceIntegrationTest {
     fun `deletePassenger should return not found when passenger does not exist`() {
         client.delete()
             .uri("/api/v1/passengers/{id}", 9999)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
             .exchange()
             .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `deletePassenger should return forbidden when user email in token does not match requested user email`() {
+        postPassenger(PassengerRequest("John", "Doe", "john.doe@example.com", "+1234567891"))
+        val passengerResponse2 = postPassenger(PassengerRequest("Bob", "Johnson", "bob.johnson@example.com", "+1234567892"))
+
+        client.delete()
+            .uri("/api/v1/passengers/{id}", passengerResponse2!!.id)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
+            .exchange()
+            .expectStatus().isForbidden
     }
 
     @Test
@@ -183,6 +264,7 @@ class PassengerServiceIntegrationTest {
         client.get()
             .uri { uriBuilder -> uriBuilder.path("/api/v1/passengers").queryParam("firstName", "Alice").build() }
             .accept(MediaType.APPLICATION_JSON)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
             .exchange()
             .expectStatus().isOk
             .expectBody(object : ParameterizedTypeReference<Map<String, Any>>() {})
@@ -209,6 +291,7 @@ class PassengerServiceIntegrationTest {
     private fun postPassenger(passengerRequest: PassengerRequest): PassengerResponse? {
         return client.post()
             .uri("/api/v1/passengers")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(passengerRequest)
             .exchange()

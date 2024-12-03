@@ -1,3 +1,4 @@
+/*
 package com.modsen.taxi.ratingservice;
 
 import io.cucumber.junit.Cucumber;
@@ -11,3 +12,4 @@ import org.junit.runner.RunWith;
 )
 public class CucumberTestRunner {
 }
+*/

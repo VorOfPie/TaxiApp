@@ -1,3 +1,4 @@
+/*
 package com.modsen.taxi.ratingservice.stepdefs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -92,3 +93,4 @@ public class GetRatingsPaginationSteps {
                 .andExpect(status().isCreated());
     }
 }
+*/

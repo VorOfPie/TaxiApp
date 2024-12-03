@@ -7,33 +7,33 @@ import com.modsen.taxi.passengerservice.error.exception.DuplicateResourceExcepti
 import com.modsen.taxi.passengerservice.error.exception.ResourceNotFoundException
 import com.modsen.taxi.passengerservice.repository.PassengerRepository
 import com.modsen.taxi.passengerservice.service.impl.PassengerServiceImpl
-import com.ninjasquad.springmockk.MockkBean
 import io.mockk.*
+import io.mockk.impl.annotations.InjectMockKs
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
 import org.hibernate.internal.util.collections.CollectionHelper.listOf
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
+import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.domain.*
+import org.springframework.security.test.context.support.WithMockUser
 import reactor.core.Disposable
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Scheduler
 import reactor.test.StepVerifier
 import java.util.*
 
-@SpringBootTest
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@ExtendWith(MockKExtension::class)
 class PassengerServiceImplTest {
 
-    @MockkBean
+    @MockK
     private lateinit var passengerRepository: PassengerRepository
 
-    @MockkBean
+    @MockK
     private lateinit var jdbcScheduler: Scheduler
 
-    @Autowired
+    @InjectMockKs
     private lateinit var passengerService: PassengerServiceImpl
 
     @BeforeEach
@@ -48,6 +48,7 @@ class PassengerServiceImplTest {
     }
 
     @Test
+    @WithMockUser(username = "john.doe@example.com", roles = ["USER"])
     fun `createPassenger should return PassengerResponse when passenger is created successfully`() {
         val passengerRequest = PassengerRequest("John", "Doe", "john.doe@example.com", "123123123123")
         val passenger1 = Passenger(1L, "John", "Doe", "john.doe@example.com", "123123123123", false)
@@ -66,6 +67,7 @@ class PassengerServiceImplTest {
     }
 
     @Test
+    @WithMockUser(username = "john.doe@example.com", roles = ["USER"])
     fun `createPassenger should throw DuplicateResourceException when passenger already exists`() {
         val passengerRequest = PassengerRequest("John", "Doe", "john.doe@example.com", "123123123123")
 
@@ -81,12 +83,13 @@ class PassengerServiceImplTest {
     }
 
     @Test
+    @WithMockUser(username = "john.doe@example.com", roles = ["USER"])
     fun `getPassengerById should return PassengerResponse when passenger exists`() {
         val passenger1 = Passenger(1L, "John", "Doe", "john.doe@example.com", "123123123123", false)
 
         every { passengerRepository.findByIdAndIsDeletedFalse(any()) } returns Optional.of(passenger1)
 
-        val result: Mono<PassengerResponse> = passengerService.getPassengerById(1L)
+        val result: Mono<PassengerResponse> = passengerService.getPassengerById(1L, "john.doe@example.com", false)
 
         StepVerifier.create(result)
             .expectNextMatches { it.email == "john.doe@example.com" }
@@ -96,10 +99,11 @@ class PassengerServiceImplTest {
     }
 
     @Test
+    @WithMockUser(username = "john.doe@example.com", roles = ["USER"])
     fun `getPassengerById should throw ResourceNotFoundException when passenger not found`() {
         every { passengerRepository.findByIdAndIsDeletedFalse(any()) } returns Optional.empty()
 
-        val result: Mono<PassengerResponse> = passengerService.getPassengerById(1L)
+        val result: Mono<PassengerResponse> = passengerService.getPassengerById(1L, "john.doe@example.com", false)
 
         StepVerifier.create(result)
             .expectError(ResourceNotFoundException::class.java)
@@ -109,13 +113,14 @@ class PassengerServiceImplTest {
     }
 
     @Test
+    @WithMockUser(username = "john.doe@example.com", roles = ["USER"])
     fun `deletePassenger should mark passenger as deleted when passenger exists`() {
         val passenger1 = Passenger(1L, "John", "Doe", "john.doe@example.com", "123123123123", false)
 
         every { passengerRepository.findByIdAndIsDeletedFalse(any()) } returns Optional.of(passenger1)
         every { passengerRepository.save(any()) } returns passenger1
 
-        val result: Mono<Void> = passengerService.deletePassenger(1L)
+        val result: Mono<Void> = passengerService.deletePassenger(1L, "john.doe@example.com", false)
 
         StepVerifier.create(result)
             .verifyComplete()
@@ -126,10 +131,11 @@ class PassengerServiceImplTest {
     }
 
     @Test
+    @WithMockUser(username = "john.doe@example.com", roles = ["USER"])
     fun `deletePassenger should throw ResourceNotFoundException when passenger does not exist`() {
         every { passengerRepository.findByIdAndIsDeletedFalse(any()) } returns Optional.empty()
 
-        val result: Mono<Void> = passengerService.deletePassenger(1L)
+        val result: Mono<Void> = passengerService.deletePassenger(1L, "john.doe@example.com", false)
 
         StepVerifier.create(result)
             .expectError(ResourceNotFoundException::class.java)
@@ -141,6 +147,7 @@ class PassengerServiceImplTest {
 
 
     @Test
+    @WithMockUser(username = "jane.doe@example.com", roles = ["ADMIN"])
     fun `getAllPassengers should return paged passengers when passengers exist`() {
         val passenger1 = Passenger(1L, "John", "Doe", "john.doe@example.com", "123123123123", false)
         val passenger2 = Passenger(2L, "Jane", "Doe", "jane.doe@example.com", "456456456456", false)

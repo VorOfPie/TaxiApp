@@ -4,6 +4,10 @@ services:
     build: microservices/PassengerService
     depends_on:
       - postgres
+      - keycloak
+      - eureka-server
+      - logstash
+      - api-gateway
     ports:
       - "8081:8080"
     environment:
@@ -11,6 +15,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     deploy:
       resources:
         limits:
@@ -20,6 +25,10 @@ services:
     build: microservices/DriverService
     depends_on:
       - postgres
+      - logstash
+      - keycloak
+      - eureka-server
+      - api-gateway
     ports:
       - "8082:8080"
     environment:
@@ -27,6 +36,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     deploy:
       resources:
         limits:
@@ -37,6 +47,10 @@ services:
     depends_on:
       - postgres
       - kafka
+      - logstash
+      - keycloak
+      - eureka-server
+      - api-gateway
     ports:
       - "8083:8080"
     environment:
@@ -44,6 +58,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     deploy:
       resources:
         limits:
@@ -54,6 +69,10 @@ services:
     depends_on:
       - postgres
       - kafka
+      - logstash
+      - keycloak
+      - eureka-server
+      - api-gateway
     ports:
       - "8084:8080"
     environment:
@@ -61,6 +80,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     deploy:
       resources:
         limits:
@@ -68,8 +88,10 @@ services:
 
   api-gateway:
     build: spring-cloud/api-gateway
+    depends_on:
+      - eureka-server
     ports:
-      - "8080:8080"
+      - "8888:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
@@ -80,9 +102,9 @@ services:
 
 
   eureka-server:
-    build: spring-cloud/api-gateway
+    build: spring-cloud/eureka-server
     ports:
-      - "8761:8080"
+      - "8761:8761"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
@@ -222,15 +244,15 @@ services:
       KC_DB_USERNAME: username
       KC_DB_PASSWORD: password
 
-      KC_HOSTNAME: localhost
-      KC_HOSTNAME_PORT: 8085
+      KC_HOSTNAME: keycloak
+      KC_HOSTNAME_PORT: 8080
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
     volumes:
       - ./keycloak:/opt/keycloak/data/import
     command: start-dev --import-realm
     ports:
-      - "8085:8080"
+      - "8080:8080"
     depends_on:
       - postgres
 

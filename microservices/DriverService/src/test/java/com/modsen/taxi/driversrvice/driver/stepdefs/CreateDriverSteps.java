@@ -27,7 +27,6 @@ public class CreateDriverSteps {
 
     @Autowired
     AccessTokenProvider accessTokenProvider;
-    @Autowired
     private WebTestClient client;
     private String userToken;
     @LocalServerPort
