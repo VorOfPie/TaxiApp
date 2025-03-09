@@ -42,9 +42,9 @@ public class DriverServiceImpl implements DriverService {
         return Mono.fromCallable(() -> {
                     Driver driver = driverRepository.findByIdAndIsDeletedFalse(id)
                             .orElseThrow(() -> {
-                            log.error("Driver with ID {} not found", id);
-                            return new ResourceNotFoundException("Driver with id " + id + " not found");
-                        }))
+                                log.error("Driver with ID {} not found", id);
+                                return new ResourceNotFoundException("Driver with id " + id + " not found");
+                            });
 
                     if (!isAdmin && !driver.getEmail().equals(principalEmail)) {
                         throw new AccessDeniedException("You do not have permission to access this driver's information.");
@@ -59,6 +59,7 @@ public class DriverServiceImpl implements DriverService {
     @Override
     public Mono<DriverResponse> createDriver(DriverRequest driverRequest) {
         log.info("Creating driver with phone number: {}", driverRequest.phone());
+        return Mono.fromCallable(() -> {
                     if (driverRepository.existsByPhone(driverRequest.phone())) {
                         log.warn("Driver with phone number {} already exists", driverRequest.phone());
                         throw new DuplicateResourceException("Driver with phone number " + driverRequest.phone() + " already exists.");
@@ -75,6 +76,7 @@ public class DriverServiceImpl implements DriverService {
                 })
                 .subscribeOn(jdbcScheduler);
     }
+
 
     @Override
     public Mono<DriverResponse> updateDriver(Long id, DriverRequest driverRequest, String principalEmail, boolean isAdmin) {

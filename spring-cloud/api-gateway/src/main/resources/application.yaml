@@ -16,7 +16,7 @@ spring:
               args:
                 name: passengerServiceCircuitBreaker
                 fallbackUri: forward:/fallback/passengers
-        - id: driver-service
+        - id: driver-service-drivers
           uri: lb://driver-service
           predicates:
             - Path=/api/v1/drivers/**
@@ -25,6 +25,16 @@ spring:
               args:
                 name: driverServiceCircuitBreaker
                 fallbackUri: forward:/fallback/drivers
+        - id: driver-service-cars
+          uri: lb://driver-service
+          predicates:
+            - Path=/api/v1/cars/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: carServiceCircuitBreaker
+                fallbackUri: forward:/fallback/cars
+
         - id: trip-service
           uri: lb://trip-service
           predicates:

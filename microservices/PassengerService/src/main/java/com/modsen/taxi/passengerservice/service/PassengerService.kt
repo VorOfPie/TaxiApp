@@ -8,15 +8,23 @@ import reactor.core.publisher.Mono
 
 interface PassengerService {
     fun createPassenger(passengerRequest: PassengerRequest): Mono<PassengerResponse>
-    fun updatePassenger(id: Long, passengerRequest: PassengerRequest): Mono<PassengerResponse>
-    fun getPassengerById(id: Long): Mono<PassengerResponse>
+
+    fun updatePassenger(
+        id: Long,
+        passengerUpdateRequest: PassengerRequest,
+        principalEmail: String,
+        isAdmin: Boolean
+    ): Mono<PassengerResponse>
+
+    fun getPassengerById(id: Long, principalEmail: String, isAdmin: Boolean): Mono<PassengerResponse>
+
     fun getAllPassengers(
         pageable: Pageable,
         firstName: String?,
         lastName: String?,
         email: String?,
-        isActive: Boolean?
+        isActive: Boolean
     ): Mono<Page<PassengerResponse>>
 
-    fun deletePassenger(id: Long): Mono<Void>
+    fun deletePassenger(id: Long, principalEmail: String, isAdmin: Boolean): Mono<Void>
 }

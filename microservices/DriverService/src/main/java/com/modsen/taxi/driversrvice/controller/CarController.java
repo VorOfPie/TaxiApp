@@ -26,13 +26,13 @@ import java.util.Map;
 public class CarController implements CarApi {
 
     private final CarService carService;
-
+    @Override
     @PostMapping
     public Mono<ResponseEntity<CarResponse>> createCar(@RequestBody CreateCarRequest createCarRequest) {
         return carService.createCar(createCarRequest)
                 .map(car -> new ResponseEntity<>(car, HttpStatus.CREATED));
     }
-
+    @Override
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public Mono<ResponseEntity<CarResponse>> updateCar(@PathVariable Long id,
@@ -43,7 +43,7 @@ public class CarController implements CarApi {
         return carService.updateCar(id, createCarRequest, principalEmail, isAdmin)
                 .map(updatedCar -> new ResponseEntity<>(updatedCar, HttpStatus.OK));
     }
-
+    @Override
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public Mono<ResponseEntity<CarResponse>> getCarById(@PathVariable Long id,
@@ -53,7 +53,7 @@ public class CarController implements CarApi {
         return carService.getCarById(id, principalEmail, isAdmin)
                 .map(car -> new ResponseEntity<>(car, HttpStatus.OK));
     }
-
+    @Override
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<Map<String, Object>>> getAllCars(@RequestParam(required = false) String brand,
@@ -81,7 +81,7 @@ public class CarController implements CarApi {
                     return new ResponseEntity<>(response, HttpStatus.OK);
                 });
     }
-
+    @Override
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public Mono<ResponseEntity<Void>> deleteCar(@PathVariable Long id,

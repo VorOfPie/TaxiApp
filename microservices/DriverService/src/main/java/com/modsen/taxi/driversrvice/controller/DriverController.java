@@ -28,12 +28,14 @@ public class DriverController implements DriverApi {
 
     private final DriverService driverService;
 
+    @Override
     @PostMapping
     public Mono<ResponseEntity<DriverResponse>> createDriver(@Valid @RequestBody DriverRequest driverRequest) {
         return driverService.createDriver(driverRequest)
                 .map(driver -> new ResponseEntity<>(driver, HttpStatus.CREATED));
     }
 
+    @Override
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public Mono<ResponseEntity<DriverResponse>> updateDriver(@PathVariable Long id,
@@ -45,6 +47,7 @@ public class DriverController implements DriverApi {
                 .map(updatedDriver -> new ResponseEntity<>(updatedDriver, HttpStatus.OK));
     }
 
+    @Override
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public Mono<ResponseEntity<DriverResponse>> getDriverById(@PathVariable Long id,
@@ -55,6 +58,7 @@ public class DriverController implements DriverApi {
                 .map(driver -> new ResponseEntity<>(driver, HttpStatus.OK));
     }
 
+    @Override
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<Map<String, Object>>> getAllDrivers(@RequestParam(required = false) String firstName,
@@ -82,6 +86,7 @@ public class DriverController implements DriverApi {
                 });
     }
 
+    @Override
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public Mono<ResponseEntity<Void>> deleteDriver(@PathVariable Long id,
