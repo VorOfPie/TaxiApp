@@ -13,7 +13,7 @@ spring:
         registration:
           keycloak:
             client-id: taxiapp
-            client-secret: c6O7xKiHdKAkmJE3UbPBy1MhbmveSpjY
+            client-secret: Xbfrxu5jJRqzK0C36c0WPOCovoLRerO3
             scope: openid
             
   application:
@@ -57,11 +57,15 @@ eureka:
     leaseRenewalIntervalInSeconds: 5
     leaseExpirationDurationInSeconds: 5
 
-tripservice:
-  urls:
-    passenger: http://localhost:7001/api/v1/passengers/
-    driver: http://localhost:7002/api/v1/drivers/
 
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+  kafka:
+    bootstrap-servers: kafka:9092
+server.port: 8080
 
 management:
   endpoints:
@@ -88,15 +92,3 @@ logging:
   pattern:
     console: '{"timestamp":"%d{yyyy-MM-dd HH:mm:ss.SSS}", "level":"%p", "thread":"%t", "traceId":"%X{traceId}", "spanId":"%X{spanId}", "message":"%msg"}'
 
----
-spring:
-  config:
-    activate:
-      on-profile: docker
-  kafka:
-    bootstrap-servers: kafka:9092
-server.port: 8080
-tripservice:
-  urls:
-    passenger: http://passenger:8080/api/v1/passengers/
-    driver: http://driver:8080/api/v1/drivers/

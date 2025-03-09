@@ -1,5 +1,7 @@
 package com.modsen.taxi.tripservice.service.impl;
 
+import com.modsen.taxi.tripservice.config.DriverClient;
+import com.modsen.taxi.tripservice.config.PassengerClient;
 import com.modsen.taxi.tripservice.domain.Trip;
 import com.modsen.taxi.tripservice.domain.TripStatus;
 import com.modsen.taxi.tripservice.dto.request.RatingRequest;
@@ -41,7 +43,7 @@ public class TripServiceImpl implements TripService {
     @Transactional
     public TripResponse createTrip(TripRequest tripRequest) {
         log.info("Creating a new trip for Passenger ID: {} and Driver ID: {}", tripRequest.passengerId(), tripRequest.driverId());
-       passengerDriverValidator.validatePassengerAndDriverExistence(tripRequest.passengerId(), tripRequest.driverId());
+        passengerDriverValidator.validatePassengerAndDriverExistence(tripRequest.passengerId(), tripRequest.driverId());
         Trip trip = tripMapper.toEntity(tripRequest);
         trip.setStatus(TripStatus.CREATED);
         Trip savedTrip = tripRepository.save(trip);
@@ -53,7 +55,7 @@ public class TripServiceImpl implements TripService {
     @Transactional
     public TripResponse updateTrip(Long id, TripRequest tripRequest) {
         log.info("Updating trip with ID: {}", id);
-passengerDriverValidator.validatePassengerAndDriverAccess(tripRequest.passengerId(), tripRequest.driverId());
+        passengerDriverValidator.validatePassengerAndDriverAccess(tripRequest.passengerId(), tripRequest.driverId());
         Trip existingTrip = tripRepository.findById(id)
                 .orElseThrow(() -> {
                     log.error("Trip with ID {} not found", id);
@@ -73,9 +75,11 @@ passengerDriverValidator.validatePassengerAndDriverAccess(tripRequest.passengerI
                 .orElseThrow(() -> {
                     log.error("Trip with ID {} not found", id);
                     return new ResourceNotFoundException("Trip with id " + id + " not found");
+                });
         passengerDriverValidator.validatePassengerAndDriverAccess(trip.getPassengerId(), trip.getDriverId());
         return tripMapper.toDTO(trip);
     }
+
 
     @Override
     public Page<TripResponse> getAllTrips(Pageable pageable, Long driverId, Long passengerId, String originAddress, String destinationAddress, String status) {
@@ -166,4 +170,5 @@ passengerDriverValidator.validatePassengerAndDriverAccess(tripRequest.passengerI
             log.error("Failed to send rating event for trip ID: {} via Kafka", id, ex);
             throw new InvalidRequestException("Failed to send rating event via Kafka");
         }
+    }
 }

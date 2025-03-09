@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 
-class CreatePassengerSteps {
+open class CreatePassengerSteps {
 
     @Autowired
     private lateinit var passengerRepository: PassengerRepository
@@ -30,7 +30,7 @@ class CreatePassengerSteps {
 
     @Given("the passenger does not already exist with email {string}")
     @Transactional
-    fun thePassengerDoesNotExist(email: String) {
+    open fun thePassengerDoesNotExist(email: String) {
         passengerRepository.deleteByEmail(email)
     }
 

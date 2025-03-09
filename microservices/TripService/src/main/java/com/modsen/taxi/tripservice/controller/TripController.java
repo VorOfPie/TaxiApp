@@ -14,12 +14,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -29,21 +26,22 @@ public class TripController implements TripApi {
 
     private final TripService tripService;
 
+    @Override
     @PostMapping
     public ResponseEntity<TripResponse> createTrip(@Valid @RequestBody TripRequest tripRequest) {
         TripResponse createdTrip = tripService.createTrip(tripRequest);
         return new ResponseEntity<>(createdTrip, HttpStatus.CREATED);
     }
 
+    @Override
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<TripResponse> updateTrip(@PathVariable Long id, @Valid @RequestBody TripRequest tripRequest,  @AuthenticationPrincipal Jwt jwt) {
-        String principalEmail = jwt.getClaim("email");
-        boolean isAdmin = isAdmin(jwt);
+    public ResponseEntity<TripResponse> updateTrip(@PathVariable Long id, @Valid @RequestBody TripRequest tripRequest) {
         TripResponse updatedTrip = tripService.updateTrip(id, tripRequest);
         return new ResponseEntity<>(updatedTrip, HttpStatus.OK);
     }
 
+    @Override
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<TripResponse> updateTripStatus(@PathVariable Long id, @RequestParam String status) {
@@ -51,6 +49,7 @@ public class TripController implements TripApi {
         return new ResponseEntity<>(updatedTrip, HttpStatus.OK);
     }
 
+    @Override
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<TripResponse> getTripById(@PathVariable Long id) {
@@ -58,6 +57,7 @@ public class TripController implements TripApi {
         return new ResponseEntity<>(tripResponse, HttpStatus.OK);
     }
 
+    @Override
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getAllTrips(
@@ -87,6 +87,7 @@ public class TripController implements TripApi {
 
     }
 
+    @Override
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<Void> deleteTrip(@PathVariable Long id) {
@@ -94,14 +95,12 @@ public class TripController implements TripApi {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
+    @Override
     @PostMapping("/{id}/close")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<Void> closeTrip(@PathVariable Long id, @RequestBody @Valid ScoreRequest scoreRequest) {
         tripService.closeAndRateTrip(id, scoreRequest);
         return new ResponseEntity<>(HttpStatus.OK);
     }
-    private boolean isAdmin(Jwt jwt) {
-        var roles = (List<String>) jwt.getClaimAsMap("realm_access").get("roles");
-        return roles.contains("ROLE_ADMIN");
-    }
+
 }
